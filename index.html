@@ -377,8 +377,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       <div class="cm-d">Selecionar gaiola · Montar · Resetar</div>
     </div>
     <div class="cm full" onclick="ir('salvados')" style="border-color:#CC0000">
-      <div class="cm-ic">🏷️</div><div class="cm-n">Etiqueta Salvados</div>
-      <div class="cm-d">DEVOS · Gerar etiqueta impressão Zebra</div>
+      <div class="cm-ic">🎫</div><div class="cm-n">Etiqueta DEVOS</div>
+      <div class="cm-d">Abrir chamado · Etiqueta com produto e pacote</div>
     </div>
   </div>
 
@@ -519,7 +519,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
   <!-- ABA ZONAS -->
   <div id="ids-zones">
     <div id="ids-lista"></div>
-    <button class="bp" style="margin-top:8px" onclick="toast('🖨️ Abrindo impressão...')">🖨️ Imprimir Todas</button>
+    <button class="bp" style="margin-top:8px" onclick="idsPrintTodas()">🖨️ Imprimir Todas as Plaquinhas</button>
   </div>
 
   <!-- ABA GAYLORD -->
@@ -754,10 +754,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
   </div>
 </div>
 
-<!-- ══ SALVADOS / DEVOS ══ -->
+<!-- ══ DEVOS (chamado) ══ -->
 <div class="tela" id="tela-salvados">
-  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Etiqueta Salvados</h2></div>
-  
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Etiqueta DEVOS</h2></div>
+  <div style="background:#FFEBEE;border:1px solid #CC0000;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:#B71C1C;line-height:1.5">
+    🎫 <b>Esta etiqueta exige abertura de chamado.</b> Preencha o número do chamado (SHP-X) antes de gerar. Para etiquetas de <b>Sem ID</b> ou <b>Gaylord</b> (Salvados), use o módulo <b>Identificações</b>.
+  </div>
+
   <div class="scard" style="margin-bottom:12px">
     <div class="slbl" style="margin-bottom:8px">Operação</div>
     <select id="ed-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:11px;outline:none">
@@ -1032,77 +1035,180 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 </div>
 
 <script>
-// ── CONFIG ──
-const SB_URL='https://pkeqkxjiranrxudnoorl.supabase.co';
-const SB_KEY='sb_publishable_YB1Rr9Yto7IrOzhb3odhYA_vt-S_dgB';
+// ══════════════════════════════════════
+// ── DB (localStorage) + SUPABASE (nuvem) ──
+// ══════════════════════════════════════
+const SB_URL = 'https://pkeqkxjiranrxudnoorl.supabase.co';
+const SB_KEY = 'sb_publishable_YB1Rr9Yto7IrOzhb3odhYA_vt-S_dgB';
+let SB = null; // instância do cliente Supabase, criada em gridInit()
 
-// ── DB LOCAL ──
-// ── GRID SDK BRIDGE ──
-const DOC_ID = window.location.pathname.split('/')[2] || 'local';
-let _gridState = {};
-let _gridReady = false;
-
-async function gridInit(){
-  if(typeof Grid !== 'undefined'){
-    try{
-      Grid.configure({docId: DOC_ID});
-      const r = await Grid.getData();
-      if(r && r.state && r.state.smg6) _gridState = r.state.smg6;
-      _gridReady = true;
-      console.log('✅ Grid SDK conectado');
-    }catch(e){ console.warn('Grid SDK fallback para localStorage:', e); }
-  }
-}
-
-async function gridSave(){
-  if(_gridReady && typeof Grid !== 'undefined'){
-    try{ await Grid.setData({state:{smg6:_gridState}}); }
-    catch(e){ console.warn('Grid save error:', e); }
-  }
-}
-
-// ── DB (localStorage + Grid fallback) ──
-const DB={
-  g(k){
-    if(_gridReady && _gridState[k] !== undefined) return _gridState[k];
-    try{return JSON.parse(localStorage.getItem('smg6_'+k))||null}catch{return null}
-  },
-  s(k,v){
-    if(_gridReady){ _gridState[k]=v; gridSave(); }
-    try{localStorage.setItem('smg6_'+k,JSON.stringify(v))}catch(e){}
-  },
-  ga(k){return DB.g(k)||[]},
-  push(k,v){const a=DB.ga(k);a.unshift(v);DB.s(k,a)}
+// DB — localStorage é a fonte imediata (sempre funciona, offline inclusive)
+const DB = {
+  g(k){ try{return JSON.parse(localStorage.getItem('smg6_'+k))||null}catch{return null} },
+  s(k,v){ try{localStorage.setItem('smg6_'+k,JSON.stringify(v))}catch(e){} },
+  ga(k){ return DB.g(k)||[] },
+  push(k,v){ const a=DB.ga(k); a.unshift(v); DB.s(k,a); }
 };
-let U=DB.g('user');
+let U = DB.g('user');
+
+// Inicia Supabase em background — nunca bloqueia a UI
+function gridInit(){
+  return new Promise(function(resolve){
+    try{
+      if(typeof supabase === 'undefined' || !supabase.createClient){ resolve(); return; }
+      SB = supabase.createClient(SB_URL, SB_KEY);
+      SB.from('usuarios').select('id').limit(1).then(function(r){
+        if(!r.error){
+          console.log('✅ Supabase conectado');
+          var dot=document.getElementById('e-dbdot'), lbl=document.getElementById('e-dblbl');
+          if(dot) dot.className='db-dot ok';
+          if(lbl) lbl.textContent='Conectado';
+          sbSyncUsers();
+        }
+        resolve();
+      }).catch(function(){ resolve(); });
+    }catch(e){ console.warn('Supabase init:', e); resolve(); }
+  });
+}
+
+// Sincroniza usuários do banco para localStorage (login funciona em qualquer dispositivo)
+function sbSyncUsers(){
+  if(!SB) return;
+  SB.from('usuarios').select('*').then(function(r){
+    if(r.data && r.data.length){
+      var users = r.data.map(function(u){
+        return {lw:u.lw, nome:u.nome, sobrenome:u.sobrenome, senha:u.senha, admin:u.admin, id:u.id};
+      });
+      DB.s('users', users);
+      console.log('✅ '+users.length+' usuários sincronizados do Supabase');
+    }
+  }).catch(function(e){ console.warn('sbSyncUsers:', e); });
+}
+
+// Helpers Supabase — sempre seguros mesmo se SB não estiver pronto
+function sbInsert(table, row){
+  if(!SB) return Promise.resolve(null);
+  return SB.from(table).insert(row).then(function(r){
+    if(r.error) console.warn('sbInsert['+table+']:', r.error.message);
+    return r.data;
+  }).catch(function(e){ console.warn('sbInsert['+table+']:', e); return null; });
+}
+function sbSelect(table, filters){
+  if(!SB) return Promise.resolve([]);
+  var q = SB.from(table).select('*').order('created_at',{ascending:false});
+  if(filters) Object.keys(filters).forEach(function(k){ q = q.eq(k, filters[k]); });
+  return q.then(function(r){ return r.data||[]; }).catch(function(){ return []; });
+}
+function sbDelete(table, col, val){
+  if(!SB) return Promise.resolve();
+  return SB.from(table).delete().eq(col, val).catch(function(e){ console.warn('sbDelete:', e); });
+}
+function sbUpdate(table, col, val, updates){
+  if(!SB) return Promise.resolve();
+  return SB.from(table).update(updates).eq(col, val).catch(function(e){ console.warn('sbUpdate:', e); });
+}
 
 // ── ZONAS ──
-const ZONAS=[
-  {key:'dev',cor:'#E65100',ids:['D1','D2','D3','D4','D5']},
-  {key:'fin',cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5']},
-  {key:'mis',cor:'#C62828',ids:['M1','M2','M3','M4','M5']},
-  {key:'sid',cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10']},
-  {key:'blk',cor:'#1565C0',ids:['B1','B2','B3']},
-  {key:'ps', cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4']},
+// ══════════════════════════════════════
+// ── CONFIG ÚNICA DE ZONAS/GAIOLAS ──
+// Fonte única — usada por Alocar, Painel, Devolução, Identificações
+// Editável pelo operador (adicionar/remover gaiolas)
+// ══════════════════════════════════════
+const ZONAS_DEFAULT = [
+  {key:'dev',nome:'Devolução',   cor:'#E65100',ids:['D1','D2','D3','D4','D5'],                                  sla:'SLA: 24 a 48 horas',
+   status:['Aguardando Devolução','Pacote Avariado','Recusado pelo Comprador','Para Devolver','Envio Cancelado','Suspenso por Fraude']},
+  {key:'fin',nome:'Finalizador', cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5'],                                  sla:'Sistema Travado — HU Genérico',
+   status:['Entregue','Entregue - Place','Roubado','Perdido','Devolvido','Logistics Cancelado','Avariado na Rota']},
+  {key:'mis',nome:'Missort',     cor:'#C62828',ids:['M1','M2','M3','M4','M5'],                                  sla:'SLA: 24 a 48 horas',
+   status:['Estação Errada','Avariado na Origem','Avariado na Operação']},
+  {key:'sid',nome:'Sem ID',      cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'],        sla:'SLA: 3 a 5 dias',
+   status:['Pacote sem identificação','Busca via tabela de risco','Identificado → segue o fluxo normal','Não identificado → Salvados']},
+  {key:'blk',nome:'Bulky',       cor:'#1565C0',ids:['B1','B2','B3'],                                            sla:'Já etiquetado → HU → Doca 01',
+   status:['Item grande coletado','Para devolver — Bulky','Já vem etiquetado pelo motorista']},
+  {key:'ps', nome:'PS',          cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4'],                                   sla:'⏰ SLA: 24 HORAS — URGENTE',
+   status:['Para Solução de Problemas','Aguardando Aprovação do PS','Resultado: Devolução / Entrega Parcial / Destruição']},
 ];
-const COR=id=>{for(const z of ZONAS)if(z.ids.includes(id.toUpperCase()))return z.cor;return '#888'};
 
-// ── LAYOUT GAIOLAS SVG (viewBox 240x180) ──
-// Apenas as gaiolas, limpo e organizado
-const GMAP=[
-  // DEV — col vertical esquerda
-  ...[0,1,2,3,4].map(i=>({id:'D'+(i+1),x:4,y:4+i*22,w:28,h:19,cor:'#E65100'})),
-  // FIN + MIS — costas com costas
-  ...[0,1,2,3,4].map(i=>({id:'F'+(i+1),x:38,y:4+i*22,w:24,h:19,cor:'#7B1FA2'})),
-  ...[0,1,2,3,4].map(i=>({id:'M'+(i+1),x:62,y:4+i*22,w:24,h:19,cor:'#C62828'})),
-  // SID — costas com costas (x2)
-  ...[0,1,2,3,4].map(i=>({id:'S'+(i+1),x:94,y:4+i*22,w:24,h:19,cor:'#6A1B9A'})),
-  ...[0,1,2,3,4].map(i=>({id:'S'+(i+6),x:118,y:4+i*22,w:24,h:19,cor:'#6A1B9A'})),
-  // BLK — coluna vertical
-  ...[0,1,2].map(i=>({id:'B'+(i+1),x:150,y:4+i*22,w:28,h:19,cor:'#1565C0'})),
-  // PS — linha inferior
-  ...[0,1,2,3].map(i=>({id:'PS'+(i+1),x:4+i*46,y:126,w:42,h:20,cor:'#FF8F00'})),
-];
+function zonasLoad(){
+  try{
+    var saved = JSON.parse(localStorage.getItem('smg6_zonas_config'));
+    if(saved && Array.isArray(saved) && saved.length){
+      // Mescla com defaults (garante nome/cor/sla/status mesmo se salvo antigo só tinha ids)
+      return ZONAS_DEFAULT.map(function(zd){
+        var s = saved.find(function(x){return x.key===zd.key;});
+        return s ? Object.assign({},zd,{ids:s.ids}) : zd;
+      });
+    }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(ZONAS_DEFAULT));
+}
+function zonasSave(zonas){
+  localStorage.setItem('smg6_zonas_config', JSON.stringify(zonas.map(function(z){return {key:z.key,ids:z.ids};})));
+}
+let ZONAS = zonasLoad();
+const COR = id=>{ for(const z of ZONAS) if(z.ids.includes(id.toUpperCase())) return z.cor; return '#888'; };
+
+function zonaAddGaiola(key){
+  var z = ZONAS.find(function(x){return x.key===key;});
+  if(!z) return;
+  // Gera próximo ID sequencial (ex: D6 se D1..D5 existem, PS5 se PS1..PS4)
+  var prefix = z.ids.length ? z.ids[0].replace(/[0-9]+$/,'') : (key==='ps'?'PS':key.charAt(0).toUpperCase());
+  var nums = z.ids.map(function(id){ var m=id.match(/(\d+)$/); return m?parseInt(m[1]):0; });
+  var next = (nums.length?Math.max.apply(null,nums):0)+1;
+  var novoId = prefix+next;
+  z.ids.push(novoId);
+  zonasSave(ZONAS);
+  toast('✅ Gaiola '+novoId+' criada em '+z.nome);
+  zonasRefreshAll();
+}
+function zonaRemoveGaiola(key, id){
+  var z = ZONAS.find(function(x){return x.key===key;});
+  if(!z) return;
+  if(z.ids.length<=1){ toast('⚠️ A zona precisa ter ao menos 1 gaiola'); return; }
+  if(!confirm('Remover a gaiola '+id+'?')) return;
+  z.ids = z.ids.filter(function(x){return x!==id;});
+  zonasSave(ZONAS);
+  toast('✅ Gaiola '+id+' removida');
+  zonasRefreshAll();
+}
+// Re-renderiza todos os lugares que dependem das zonas
+function zonasRefreshAll(){
+  ZONAS = zonasLoad();
+  rebuildGMAP();
+  try{ if(document.getElementById('tela-ids').classList.contains('ativa')) rIds(); }catch(e){}
+  try{ if(document.getElementById('tela-alocar').classList.contains('ativa')) aBuildGrid(); }catch(e){}
+  try{ if(document.getElementById('tela-painel').classList.contains('ativa')) rPainel(); }catch(e){}
+  try{ if(document.getElementById('tela-devol').classList.contains('ativa')) rDevol(); }catch(e){}
+}
+
+// ── LAYOUT GAIOLAS SVG (viewBox 240x180) — gerado dinamicamente a partir de ZONAS ──
+let GMAP = [];
+function rebuildGMAP(){
+  var g = [];
+  function col(ids, x, w, colorFallback){
+    ids.forEach(function(id,i){ g.push({id:id,x:x,y:4+i*22,w:w,h:19,cor:colorFallback}); });
+  }
+  var zDev=ZONAS.find(function(z){return z.key==='dev';});
+  var zFin=ZONAS.find(function(z){return z.key==='fin';});
+  var zMis=ZONAS.find(function(z){return z.key==='mis';});
+  var zSid=ZONAS.find(function(z){return z.key==='sid';});
+  var zBlk=ZONAS.find(function(z){return z.key==='blk';});
+  var zPs =ZONAS.find(function(z){return z.key==='ps';});
+  if(zDev) col(zDev.ids, 4, 28, zDev.cor);
+  if(zFin) col(zFin.ids, 38, 24, zFin.cor);
+  if(zMis) col(zMis.ids, 62, 24, zMis.cor);
+  if(zSid){
+    var metade = Math.ceil(zSid.ids.length/2);
+    col(zSid.ids.slice(0,metade), 94, 24, zSid.cor);
+    col(zSid.ids.slice(metade), 118, 24, zSid.cor);
+  }
+  if(zBlk) col(zBlk.ids, 150, 28, zBlk.cor);
+  if(zPs){
+    zPs.ids.forEach(function(id,i){ g.push({id:id,x:4+i*46,y:126,w:42,h:20,cor:zPs.cor}); });
+  }
+  GMAP = g;
+}
+rebuildGMAP();
 
 function gerarSVG(svgId,usadas,processadas,clicavel){
   const svg=document.getElementById(svgId);if(!svg)return;
@@ -1285,25 +1391,13 @@ function rDash(){
 let A_PKG_ID = '';     // ID do pacote atual
 let A_GAIOLA = '';     // Gaiola selecionada
 
-// Zonas para o grid
-const ALOCAR_ZONAS=[
-  {key:'dev',label:'DEVOLUÇÃO',cor:'#E65100',ids:['D1','D2','D3','D4','D5']},
-  {key:'fin',label:'FINALIZADOR',cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5']},
-  {key:'mis',label:'MISSORT',cor:'#C62828',ids:['M1','M2','M3','M4','M5']},
-  {key:'sid',label:'SEM ID',cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10']},
-  {key:'blk',label:'BULKY',cor:'#1565C0',ids:['B1','B2','B3']},
-  {key:'ps', label:'PS',cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4']},
-];
-
 function aBuildGrid(){
   const grid = document.getElementById('a-zonas-grid');
   if(!grid) return;
-  grid.innerHTML = ALOCAR_ZONAS.map(z=>`
+  grid.innerHTML = ZONAS.map(z=>`
     <div style="border-radius:9px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.07)">
-      <div style="background:${z.cor};padding:6px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
-           onclick="aToggleZona('${z.key}')">
-        <span style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.5px">${z.label}</span>
-        <span style="color:rgba(255,255,255,.7);font-size:12px" id="a-arrow-${z.key}">▾</span>
+      <div style="background:${z.cor};padding:6px 12px">
+        <span style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.5px">${z.nome.toUpperCase()}</span>
       </div>
       <div id="a-gz-${z.key}" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:8px">
         ${z.ids.map(id=>`
@@ -1391,16 +1485,14 @@ function alocar(){
   if(!gz){ toast('⚠️ Escolha a gaiola'); return; }
   const hoje = new Date().toLocaleDateString('pt-BR');
   const hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  DB.push('aloc',{id,gaiola:gz,cor:COR(gz),operador:U.nome,data:hoje,hora});
-  sbInsert('alocacoes',{pacote_id:id,gaiola:gz,cor:COR(gz),operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
-  // Reset
-  document.getElementById('a-id').value = '';
-  document.getElementById('a-gz').value = '';
-  A_PKG_ID = ''; A_GAIOLA = '';
-  document.getElementById('a-gz-panel').style.display = 'none';
+
+  // 1) FEEDBACK IMEDIATO — antes de qualquer outra coisa, pra não parecer travado
   const status = document.getElementById('a-pkg-status');
-  if(status) status.style.display = 'none';
-  // Reset botões
+  if(status){
+    status.style.display='block'; status.style.background='#1F3864'; status.style.color='#FFE600';
+    status.style.border='none'; status.textContent='✅ '+id+' → '+gz+' alocado!';
+  }
+  // Desmarca a gaiola imediatamente (visual)
   document.querySelectorAll('[id^="abtn-"]').forEach(b=>{
     b.style.opacity='0.7'; b.style.border='2px solid transparent'; b.style.transform='scale(1)'; b.style.boxShadow='';
   });
@@ -1408,8 +1500,21 @@ function alocar(){
   if(lbl) lbl.textContent = '—';
   const bAlocar = document.getElementById('a-btn-alocar');
   if(bAlocar){ bAlocar.style.opacity='.4'; bAlocar.style.pointerEvents='none'; }
+
+  // 2) Salva (não bloqueia a UI)
+  DB.push('aloc',{id,gaiola:gz,cor:COR(gz),operador:U.nome,data:hoje,hora});
+  sbInsert('alocacoes',{pacote_id:id,gaiola:gz,cor:COR(gz),operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
+
+  // 3) Limpa campos e mantém painel aberto pra próximo scan ser instantâneo
+  document.getElementById('a-id').value = '';
+  document.getElementById('a-gz').value = '';
+  A_PKG_ID = ''; A_GAIOLA = '';
   document.getElementById('a-id').focus();
   toast('✅ '+id+' → '+gz);
+  // Some a mensagem verde depois de 1.5s, painel de gaiolas continua aberto
+  setTimeout(function(){
+    if(status && A_PKG_ID===''){ status.textContent='Bipe o próximo pacote...'; status.style.background='#F0F2F5'; status.style.color='#888'; }
+  }, 1500);
   rAlocar();
 }
 
@@ -1505,36 +1610,96 @@ function rDescarte(){
   l.innerHTML=itens.map(r=>`<div class="reg"><div><div class="rc">${r.cod}</div><div class="ri">${r.operador} · ${r.hora}</div></div><span style="font-size:10px;font-weight:700;color:#37474F">${r.gaylord}</span></div>`).join('');
 }
 function descarte(){
-  const cod=document.getElementById('d-id').value.trim();if(!cod){toast('⚠️ Scan o item');return}
+  const inp = document.getElementById('d-id');
+  const cod = inp.value.trim();
+  if(!cod){ toast('⚠️ Scan o item'); return; }
   const gays=DB.ga('gaylords');const gay=gays.length?gays[0].id:'GAY-000001';
   const hoje=new Date().toLocaleDateString('pt-BR');const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  // Limpa o campo e foca ANTES de renderizar — sensação instantânea pro operador
+  inp.value='';
+  inp.focus();
+  toast('✅ '+cod+' → '+gay);
   DB.push('descartes',{cod,gaylord:gay,operador:U.nome,data:hoje,hora});
   sbInsert('embalagens',{pacote_id:cod,gaylord_id:gay,operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
-  document.getElementById('d-id').value='';toast(`✅ ${cod} → ${gay}`);rDescarte();
+  rDescarte();
 }
 
-// ── IDENTIFICAÇÕES ──
+// ── IDENTIFICAÇÕES (Zonas) — plaquinhas imprimíveis + gestão de gaiolas ──
 function rIds(){
-  const ID_ZONAS=[
-    {nome:'Devolução',cor:'#E65100',ids:['D1','D2','D3','D4','D5'],sla:'SLA: 24 a 48h'},
-    {nome:'Finalizador',cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5'],sla:'HU Genérico'},
-    {nome:'Missort',cor:'#C62828',ids:['M1','M2','M3','M4','M5'],sla:'SLA: 24 a 48h'},
-    {nome:'Sem ID',cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'],sla:'SLA: 3 a 5 dias'},
-    {nome:'Bulky',cor:'#1565C0',ids:['B1','B2','B3'],sla:'HU → Doca 01'},
-    {nome:'PS',cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4'],sla:'SLA: 24h URGENTE'},
-  ];
-  document.getElementById('ids-lista').innerHTML=ID_ZONAS.map(z=>`
-    <div style="background:#fff;border-radius:9px;overflow:hidden;margin-bottom:8px;display:flex;align-items:stretch;box-shadow:0 1px 4px rgba(0,0,0,.05)">
-      <div style="width:7px;background:${z.cor};flex-shrink:0"></div>
-      <div style="padding:10px 12px;flex:1">
-        <div style="font-size:12px;font-weight:700;color:var(--navy)">${z.nome}</div>
-        <div style="font-size:10px;color:var(--gray);margin-top:2px">${z.ids.join(' · ')}</div>
-        <div style="font-size:10px;font-weight:700;color:${z.cor};margin-top:3px">${z.sla}</div>
-      </div>
-      <div style="padding:10px;display:flex;align-items:center">
-        <button style="background:var(--navy);color:var(--yellow);border:none;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer" onclick="toast('🖨️ Imprimindo ${z.nome}...')">🖨️</button>
-      </div>
-    </div>`).join('');
+  ZONAS = zonasLoad();
+  document.getElementById('ids-lista').innerHTML = ZONAS.map(function(z){
+    var gaiolasChips = z.ids.map(function(id){
+      return '<span style="display:inline-flex;align-items:center;gap:4px;background:'+z.cor+'22;color:'+z.cor+';border:1px solid '+z.cor+'55;border-radius:20px;padding:3px 8px;font-size:10px;font-weight:700;margin:2px">'+id+
+        '<button onclick="zonaRemoveGaiola(\''+z.key+'\',\''+id+'\')" style="background:none;border:none;color:'+z.cor+';cursor:pointer;font-size:12px;line-height:1;padding:0;margin-left:2px">×</button></span>';
+    }).join('');
+    var statusList = z.status.map(function(s){
+      return '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#333"><span style="width:6px;height:6px;border-radius:50%;background:'+z.cor+';flex-shrink:0"></span>'+s+'</div>';
+    }).join('');
+    return '<div style="background:#fff;border-radius:11px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'+
+      '<div style="background:'+z.cor+';padding:12px 14px;display:flex;align-items:center;justify-content:space-between">'+
+        '<div style="color:#fff;font-weight:900;font-size:15px">'+z.nome+'</div>'+
+        '<button onclick="idsPrintZona(\''+z.key+'\')" style="background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>'+
+      '</div>'+
+      '<div style="padding:12px 14px">'+
+        '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0F0">'+statusList+'</div>'+
+        '<div style="font-size:10px;font-weight:700;color:'+z.cor+';margin-bottom:10px">'+z.sla+'</div>'+
+        '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Gaiolas ('+z.ids.length+')</div>'+
+        '<div>'+gaiolasChips+'</div>'+
+        '<button onclick="zonaAddGaiola(\''+z.key+'\')" style="margin-top:8px;background:var(--navy);color:var(--yellow);border:none;padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">➕ Adicionar Gaiola</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+// Imprime as plaquinhas de uma zona (uma por gaiola, formato completo)
+function idsPrintZona(key){
+  var z = ZONAS.find(function(x){return x.key===key;});
+  if(!z) return;
+  idsImprimirPlaquinhas(z.ids.map(function(id){return {id:id, zona:z};}));
+}
+function idsPrintTodas(){
+  var todas = [];
+  ZONAS.forEach(function(z){ z.ids.forEach(function(id){ todas.push({id:id, zona:z}); }); });
+  idsImprimirPlaquinhas(todas);
+}
+function idsImprimirPlaquinhas(lista){
+  if(!lista.length){ toast('⚠️ Nenhuma gaiola para imprimir'); return; }
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Identificações SMG6</title><style>';
+  html += '@page{size:A4 portrait;margin:14mm 12mm}';
+  html += '*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Arial,sans-serif}';
+  html += '.pg{width:100%;height:257mm;display:flex;align-items:center;justify-content:center;page-break-after:always}';
+  html += '.pg:last-child{page-break-after:avoid}';
+  html += '.placa{width:182mm;border:5px solid #111;border-radius:4px;overflow:hidden;background:#fff}';
+  html += '.topo{padding:24px 32px 28px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}';
+  html += '.pid{font-weight:900;line-height:1;letter-spacing:-2px;color:#111}';
+  html += '.psub{font-size:30px;font-weight:700;color:#111;opacity:.65}';
+  html += '.corpo{background:#fff;border-top:4px solid #111;padding:18px 32px 22px;display:flex;flex-direction:column;gap:10px}';
+  html += '.nome{font-size:16px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;padding-bottom:10px;border-bottom:1px solid #EEE}';
+  html += '.sitem{display:flex;align-items:center;gap:10px;font-size:17px;color:#111;font-weight:500}';
+  html += '.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}';
+  html += '.slabadge{margin-top:10px;font-size:14px;font-weight:700;padding:6px 16px;border-radius:20px;color:#fff;align-self:flex-start}';
+  html += '</style></head><body>';
+  lista.forEach(function(item){
+    var z = item.zona;
+    var fontSize = z.nome.length<=6?'90px':z.nome.length<=9?'62px':'44px';
+    html += '<div class="pg"><div class="placa">';
+    html += '<div class="topo" style="background:'+z.cor+'">';
+    html += '<div class="pid" style="font-size:'+fontSize+'">'+z.nome.toUpperCase()+'</div>';
+    html += '<div class="psub">_'+item.id+'</div>';
+    html += '</div><div class="corpo">';
+    html += '<div class="nome">'+z.nome.toUpperCase()+'</div>';
+    z.status.forEach(function(s){
+      html += '<div class="sitem"><div class="dot" style="background:'+z.cor+'"></div><span>'+s+'</span></div>';
+    });
+    html += '<div class="slabadge" style="background:'+z.cor+'">'+z.sla+'</div>';
+    html += '</div></div></div>';
+  });
+  html += '</body></html>';
+  var win = window.open('', '_blank', 'width=500,height=700');
+  if(!win){ toast('❌ Permita pop-ups para imprimir'); return; }
+  win.document.write(html); win.document.close(); win.focus();
+  setTimeout(function(){ win.print(); }, 600);
+  toast('✅ Abrindo impressão de '+lista.length+' plaquinha(s)...');
 }
 
 // ── GAYLORD ──
