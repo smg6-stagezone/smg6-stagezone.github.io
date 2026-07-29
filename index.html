@@ -2284,7 +2284,7 @@ function admRenderUsers(){
     return '<div style="display:flex;align-items:center;justify-content:space-between;background:#F8F9FF;border-radius:7px;padding:8px 10px">'+
       '<div><div style="font-size:12px;font-weight:700;color:var(--navy)">'+u.nome+' '+u.sobrenome+'</div>'+
       '<div style="font-size:10px;color:var(--gray)">'+u.lw+'  ·  '+(u.admin?'🔐 Admin':'👷 Operador')+'</div></div>'+
-      '<button onclick="admPromoverUser(''+u.lw+'')" style="background:'+(u.admin?'#FFEBEE':'#E8F5E9')+';color:'+(u.admin?'var(--red)':'var(--green)')+';border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer">'+
+      '<button onclick="admPromoverUser(&quot;'+u.lw+'&quot;)" style="background:'+(u.admin?'#FFEBEE':'#E8F5E9')+';color:'+(u.admin?'var(--red)':'var(--green)')+';border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer">'+
       (u.admin?'→ Operador':'→ Admin')+'</button></div>';
   }).join('');
 }
