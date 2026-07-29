@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
@@ -1323,6 +1324,7 @@ function alocar(){
   const hoje = new Date().toLocaleDateString('pt-BR');
   const hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   DB.push('aloc',{id,gaiola:gz,cor:COR(gz),operador:U.nome,data:hoje,hora});
+  sbInsert('alocacoes',{pacote_id:id,gaiola:gz,cor:COR(gz),operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
   // Reset
   document.getElementById('a-id').value = '';
   document.getElementById('a-gz').value = '';
@@ -1397,6 +1399,7 @@ function montarDevol(){
   DB.s('aloc',restantes);
   // Registra a devolução
   DB.push('devol',{gaiolas,operador:U.nome,data:hoje,hora});
+  sbInsert('devol',{gaiolas:JSON.stringify(gaiolas),operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
   toast('✅ Gaiolas '+gaiolas.join(', ')+' montadas e resetadas!');
   rDevol();
 }
@@ -1438,6 +1441,7 @@ function descarte(){
   const gays=DB.ga('gaylords');const gay=gays.length?gays[0].id:'GAY-000001';
   const hoje=new Date().toLocaleDateString('pt-BR');const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   DB.push('descartes',{cod,gaylord:gay,operador:U.nome,data:hoje,hora});
+  sbInsert('embalagens',{pacote_id:cod,gaylord_id:gay,operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
   document.getElementById('d-id').value='';toast(`✅ ${cod} → ${gay}`);rDescarte();
 }
 
@@ -1470,6 +1474,7 @@ function proxGay(){const g=DB.ga('gaylords');return`GAY-${String((g.length?parse
 function gerarGay(){
   const id=proxGay();const hoje=new Date().toLocaleDateString('pt-BR');
   DB.push('gaylords',{id,data:hoje,operador:U.nome});
+  sbInsert('gaylords',{gay_id:id,data:hoje,operador:U.nome,operador_lw:U?U.lw||'':''});
   toast('✅ '+id+' gerado!');rGay();
 }
 function rGay(){
@@ -1493,6 +1498,7 @@ function gerarSID(){
   const id=proxSID();const hoje=new Date().toLocaleDateString('pt-BR');
   const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   DB.push('sids',{id,data:hoje,hora,operador:U.nome,verificacoes:0,ultima_verif:null});
+  sbInsert('sids',{sid_id:id,data:hoje,hora,operador:U.nome,operador_lw:U.lw||'',verificacoes:0});
   toast('✅ '+id+' gerado!');rSID();
 }
 function verificarSID(){
