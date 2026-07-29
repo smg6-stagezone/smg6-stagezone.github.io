@@ -1,0 +1,2305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<title>Zona PS & Stage Zone — SMG6</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#1F3864;--yellow:#FFE600;--bg:#F0F2F5;
+  --dev:#E65100;--fin:#7B1FA2;--mis:#C62828;--sid:#6A1B9A;
+  --blk:#1565C0;--ps:#FF8F00;--green:#2E7D32;--red:#C62828;--gray:#888;
+  --blue:#3483FA;--amber:#F5A623;
+}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430px;margin:0 auto;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--navy);padding:11px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{background:var(--yellow);padding:3px 8px;border-radius:5px;font-weight:900;font-size:12px;color:var(--navy)}
+.hdr h1{font-size:14px;color:#fff;font-weight:700;margin-left:8px}
+.hdr-r b{color:var(--yellow);font-size:11px;display:block;text-align:right}
+.btn-sair{background:none;border:1px solid #8BA3CC;color:#8BA3CC;padding:2px 7px;border-radius:4px;font-size:10px;cursor:pointer;margin-top:2px;display:block}
+
+/* TELAS */
+.tela{display:none!important;padding:12px;padding-bottom:80px}
+.tela.ativa{display:block!important}
+
+/* LOGIN */
+.lcard{background:#fff;border-radius:14px;padding:22px 18px;box-shadow:0 4px 18px rgba(0,0,0,.08);margin:20px 14px}
+.tabs{display:flex;border-radius:8px;overflow:hidden;border:1.5px solid var(--navy);margin-bottom:16px}
+.tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;color:var(--navy);background:#fff}
+.tab.on{background:var(--navy);color:var(--yellow)}
+.f{margin-bottom:11px}
+.f label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.f input{width:100%;border:1.5px solid #DDD;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none}
+.f input:focus{border-color:var(--navy)}
+.bp{width:100%;background:var(--navy);color:var(--yellow);border:none;padding:12px;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;margin-top:3px}
+.bp2{width:100%;background:#fff;color:var(--navy);border:2px solid var(--navy);padding:10px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;margin-top:8px}
+.msg{border-radius:7px;padding:8px 12px;font-size:12px;margin-top:7px}
+.msg.e{background:#FFEBEE;color:var(--red);border:1px solid var(--red)}
+.msg.s{background:#E8F5E9;color:var(--green);border:1px solid var(--green)}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid #E0E0E0;display:none;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 2px;cursor:pointer;border:none;background:none;color:var(--gray);font-size:7.5px;font-weight:700;gap:3px;text-transform:uppercase}
+.ni .ic{font-size:17px}
+.ni.on{color:var(--navy)}
+
+/* DASHBOARD */
+.turno{border-radius:12px;padding:14px 16px;margin-bottom:14px;background:linear-gradient(135deg,var(--navy),#2C4F8A);display:flex;align-items:center;justify-content:space-between}
+.t-n{font-size:15px;font-weight:900;color:#fff}
+.t-s{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
+.t-b{background:var(--yellow);color:var(--navy);font-size:10px;font-weight:700;padding:4px 10px;border-radius:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cm{background:#fff;border-radius:11px;padding:13px 11px;cursor:pointer;box-shadow:0 2px 7px rgba(0,0,0,.06);border:2px solid transparent;display:flex;flex-direction:column;gap:5px}
+.cm:active{transform:scale(.97)}
+.cm.full{grid-column:1/-1}
+.cm-ic{font-size:24px}
+.cm-n{font-size:12px;font-weight:700;color:var(--navy)}
+.cm-d{font-size:10px;color:var(--gray);line-height:1.3}
+.cm-b{font-size:9px;font-weight:700;padding:2px 7px;border-radius:7px;color:#fff;align-self:flex-start}
+.slbl-sec{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin:12px 0 7px}
+
+/* SEC */
+.sec{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.sec h2{font-size:15px;font-weight:900;color:var(--navy)}
+.back{background:none;border:none;color:var(--navy);font-size:12px;font-weight:700;cursor:pointer}
+
+/* SCAN */
+.scard{background:#fff;border-radius:11px;padding:14px;box-shadow:0 2px 7px rgba(0,0,0,.05);margin-bottom:12px}
+.slbl{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.srow{display:flex;gap:7px}
+.sinp{flex:1;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:14px;font-family:monospace;font-weight:700;outline:none;background:#F8F9FF}
+.sinp:focus{border-color:var(--yellow);background:#FFFDE7}
+.bok{background:var(--navy);color:var(--yellow);border:none;padding:10px 13px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:700}
+.div{height:1px;background:#F0F0F0;margin:11px 0}
+
+/* LISTA */
+.lista{display:flex;flex-direction:column;gap:6px}
+.reg{background:#fff;border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.rc{font-size:12px;font-weight:700;color:var(--navy);font-family:monospace;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ri{font-size:10px;color:var(--gray)}
+.gbadge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;color:#fff}
+.empty{text-align:center;padding:24px;color:var(--gray);font-size:12px}
+.empty .ic{font-size:32px;margin-bottom:7px}
+
+/* PAINEL MAPA */
+.mapa-wrap{background:#fff;border-radius:11px;padding:14px;box-shadow:0 2px 7px rgba(0,0,0,.05);margin-bottom:12px}
+.mapa-title{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+#mapa-svg{width:100%;display:block}
+.leg{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:#555}
+.leg-d{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* DEVOLUÇÃO */
+.devol-wrap{background:#fff;border-radius:11px;padding:14px;box-shadow:0 2px 7px rgba(0,0,0,.05);margin-bottom:12px}
+#devol-svg{width:100%;display:block;cursor:pointer}
+.btn-montar{width:100%;background:var(--green);color:#fff;border:none;padding:12px;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer;margin-top:12px}
+.btn-montar:disabled{opacity:.4;cursor:default}
+
+/* ETIQUETA */
+.etiq{background:#fff;border:3px solid #111;border-radius:8px;overflow:hidden;margin-bottom:12px}
+.etiq-topo{padding:14px 16px 12px;display:flex;flex-direction:column;gap:3px}
+.etiq-id{font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1}
+.etiq-sub{font-size:13px;font-weight:700;color:rgba(255,255,255,.65)}
+.etiq-body{padding:12px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.etiq-info{flex:1;display:flex;flex-direction:column;gap:5px}
+.etiq-nome{font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.8px;padding-bottom:5px;border-bottom:1px solid #EEE;margin-bottom:2px}
+.etiq-det{font-size:11px;color:#333}
+.etiq-qr{width:56px;height:56px;flex-shrink:0}
+.etiq-qr canvas,.etiq-qr img{width:56px!important;height:56px!important}
+.vbadge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:3px;background:#E8F5E9;color:var(--green)}
+
+/* IDS MODULE */
+.ids-section{background:#fff;border-radius:11px;padding:14px;box-shadow:0 2px 7px rgba(0,0,0,.05);margin-bottom:12px}
+.ids-section-title{font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid #F0F0F0}
+.ids-tabs{display:flex;gap:6px;margin-bottom:12px}
+.ids-tab{flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid #DDD;color:var(--gray);background:#fff}
+.ids-tab.on{background:var(--navy);color:var(--yellow);border-color:var(--navy)}
+
+/* EXPEDIÇÃO */
+.exp-section{background:#fff;border-radius:11px;padding:14px;box-shadow:0 2px 7px rgba(0,0,0,.05);margin-bottom:10px}
+.exp-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.hu-banner{background:var(--navy);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.hu-banner-id{font-size:22px;font-weight:900;color:var(--yellow);font-family:monospace}
+.hu-banner-r{text-align:right}
+.hu-banner-qt{font-size:26px;font-weight:900;color:#fff}
+.hu-banner-lbl{font-size:10px;color:#8BA3CC}
+.exp-scan{display:flex;gap:7px;margin-bottom:8px}
+.exp-scan input{flex:1;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:14px;font-family:monospace;font-weight:700;outline:none;background:#F8F9FF}
+.exp-scan input:focus{border-color:var(--yellow);background:#FFFDE7}
+.exp-scan input.ok{border-color:var(--green);background:#E8F5E9}
+.exp-scan input.dup{border-color:var(--amber);background:#FEF6E7}
+.exp-fb{font-size:11px;padding:6px 10px;border-radius:6px;margin-bottom:8px;display:none;align-items:center;gap:5px;font-weight:500}
+.exp-fb.ok{background:#E8F5E9;color:var(--green);border:1px solid #99DDB8;display:flex}
+.exp-fb.dup{background:#FEF6E7;color:var(--amber);border:1px solid #FBDFA0;display:flex}
+.exp-fb.err{background:#FEECEC;color:var(--red);border:1px solid #F5AAAA;display:flex}
+.mot-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block}
+.d-blue{background:#3483FA}.d-amber{background:#F5A623}.d-red{background:#E83737}.d-teal{background:#00A650}.d-gray{background:#AAA}
+.exp-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.exp-tbl th{text-align:left;padding:6px 8px;font-size:10px;font-weight:700;color:var(--gray);border-bottom:2px solid #EEE;background:#FAFAFA;text-transform:uppercase}
+.exp-tbl td{padding:6px 7px;border-bottom:1px solid #F0F0F0;vertical-align:middle}
+.exp-tbl tr:hover td{background:#FAFAFA}
+.td-mono{font-family:monospace;font-size:11px;font-weight:700;color:var(--navy);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-sel{border:1.5px solid #DDD;border-radius:5px;padding:4px 6px;font-size:10px;width:100%;background:#fff}
+.del-btn{background:none;border:none;cursor:pointer;color:#CCC;padding:2px;font-size:14px}
+.del-btn:hover{color:var(--red)}
+.exp-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.btn-exp{padding:9px 13px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-exp.yellow{background:var(--yellow);color:var(--navy)}
+.btn-exp.navy{background:var(--navy);color:#fff}
+.btn-exp.green{background:#00A650;color:#fff}
+.btn-exp.blue{background:var(--blue);color:#fff}
+.btn-exp.outline{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+.hu-cfg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.hu-cfg-full{grid-column:1/-1}
+.hf label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px}
+.hf input,.hf select{width:100%;border:1.5px solid #DDD;border-radius:7px;padding:8px 10px;font-size:12px;font-family:inherit;outline:none}
+.hf input:focus{border-color:var(--navy)}
+.batch-area{width:100%;border:1.5px solid #DDD;border-radius:7px;padding:8px 10px;font-size:11px;font-family:monospace;resize:none;min-height:60px;outline:none;margin-bottom:6px}
+.motivo-mgr-wrap{background:#F8F9FF;border-radius:7px;border:1px solid #DDD;padding:10px;margin-top:8px}
+.m-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;border:1px solid #DDD;background:#fff;margin:2px;font-weight:500}
+.m-tag button{background:none;border:none;cursor:pointer;color:#AAA;font-size:12px;margin-left:2px}
+.m-tag button:hover{color:var(--red)}
+.sb-status{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700}
+.db-dot{width:7px;height:7px;border-radius:50%;background:#AAA}
+.db-dot.ok{background:#00A650}.db-dot.err{background:var(--red)}.db-dot.spin{background:var(--amber)}
+
+/* ALERT */
+.alert{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--navy);color:var(--yellow);padding:8px 16px;border-radius:16px;font-size:12px;font-weight:700;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.alert.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="alert" id="al"></div>
+
+<!-- HEADER -->
+<div class="hdr" id="hdr" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px"><div class="logo">SMG6</div><h1>Zona PS & Stage Zone</h1></div>
+  <div class="hdr-r"><b id="hdr-n">—</b><button class="btn-sair" onclick="logout()">Sair</button></div>
+</div>
+
+<!-- ══ LOGIN ══ -->
+<div id="tela-login" style="display:block;padding:0 14px 20px;background:var(--bg);min-height:100vh">
+  <div style="text-align:center;padding:32px 0 20px">
+    <div style="display:inline-block;background:var(--navy);padding:12px 22px;border-radius:14px">
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center"><div style="background:var(--yellow);color:#111;font-weight:900;font-size:16px;padding:4px 8px;border-radius:4px">ML</div><div style="font-size:22px;font-weight:900;color:#fff">Zona PS & Stage Zone</div></div>
+      <div style="font-size:10px;color:#8BA3CC;margin-top:2px">SMG6 · Mercado Livre</div>
+    </div>
+  </div>
+
+  <!-- ABAS -->
+  <div style="display:flex;border-radius:10px;overflow:hidden;border:2px solid var(--navy);margin-bottom:16px">
+    <button id="tab-entrar" onclick="showTab('entrar')"
+      style="flex:1;padding:10px;background:var(--navy);color:var(--yellow);border:none;font-weight:700;font-size:13px;cursor:pointer">
+      Entrar
+    </button>
+    <button id="tab-novo" onclick="showTab('novo')"
+      style="flex:1;padding:10px;background:#fff;color:var(--navy);border:none;font-weight:700;font-size:13px;cursor:pointer;border-left:2px solid var(--navy)">
+      Primeiro Acesso
+    </button>
+  </div>
+
+  <!-- FORM ENTRAR -->
+  <div id="form-entrar" style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,.08)">
+    <div style="margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Usuário LDPA</label>
+      <input id="l-lw" placeholder="Ex: flf.felix" autocomplete="username"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'"
+        onkeydown="if(event.key==='Enter')document.getElementById('l-senha').focus()">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Senha</label>
+      <input id="l-senha" type="password" placeholder="••••••" autocomplete="current-password"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'"
+        onkeydown="if(event.key==='Enter')fazerLogin()">
+    </div>
+    <button onclick="fazerLogin()"
+      style="width:100%;background:var(--navy);color:var(--yellow);border:none;padding:13px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer">
+      Entrar →
+    </button>
+    <div id="msg-login" style="margin-top:10px;font-size:12px"></div>
+  </div>
+
+  <!-- FORM PRIMEIRO ACESSO -->
+  <div id="form-novo" style="display:none;background:#fff;border-radius:14px;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,.08)">
+    <div style="margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Usuário LDPA</label>
+      <input id="r-lw" placeholder="Ex: flf.felix" autocomplete="username"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Nome</label>
+      <input id="r-nome" placeholder="Seu nome"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Sobrenome</label>
+      <input id="r-sobre" placeholder="Seu sobrenome"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Senha</label>
+      <input id="r-senha" type="password" placeholder="Crie uma senha"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Confirmar Senha</label>
+      <input id="r-conf" type="password" placeholder="Repita a senha"
+        style="width:100%;border:1.5px solid #DDD;border-radius:8px;padding:11px 13px;font-size:14px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='var(--navy)'" onblur="this.style.borderColor='#DDD'"
+        onkeydown="if(event.key==='Enter')fazerRegistro()">
+    </div>
+    <button onclick="fazerRegistro()"
+      style="width:100%;background:var(--navy);color:var(--yellow);border:none;padding:13px;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer">
+      Criar Conta →
+    </button>
+    <div id="msg-reg" style="margin-top:10px;font-size:12px"></div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="tela" id="tela-dash">
+  <div class="turno"><div><div class="t-n" id="tn">Olá!</div><div class="t-s" id="ts">—</div></div><div class="t-b" id="tb">T1</div></div>
+
+  <!-- T1 -->
+  <div class="slbl-sec">🌙 T1 — 22h às 11h</div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="cm full" onclick="ir('alocar')" style="border-color:var(--dev)">
+      <div class="cm-ic">📦</div><div class="cm-n">Alocar Pacote</div>
+      <div class="cm-d">Scan ID do pacote + Gaiola destino</div>
+      <div class="cm-b" style="background:var(--dev)" id="b-sz">0 hoje</div>
+    </div>
+    <div class="cm" onclick="ir('painel')">
+      <div class="cm-ic">🗺️</div><div class="cm-n">Painel Stage Zone</div>
+      <div class="cm-d">Mapa das gaiolas em uso</div>
+    </div>
+    <div class="cm" onclick="ir('descarte')">
+      <div class="cm-ic">🗑️</div><div class="cm-n">Embalagem Gaylord</div>
+      <div class="cm-d">Registrar embalagem no Gaylord ativo</div>
+    </div>
+
+    <div class="cm full" onclick="ir('ids')" style="border-color:var(--sid)">
+      <div class="cm-ic">🪧</div><div class="cm-n">Identificações</div>
+      <div class="cm-d">Plaquinhas de zona · Gaylord · Sem ID</div>
+    </div>
+  </div>
+
+  <!-- T2 -->
+  <div class="slbl-sec">☀️ T2 — 10h às 22h</div>
+  <div class="g2">
+    <div class="cm" onclick="ir('expedicao')" style="border-color:var(--fin)">
+      <div class="cm-ic">🚚</div><div class="cm-n">Expedição HU</div>
+      <div class="cm-d">Finalizadores · Supabase · XLSX</div>
+      <div class="cm-b" style="background:var(--fin)" id="b-exp">0 HUs</div>
+    </div>
+    <div class="cm" onclick="ir('devol')">
+      <div class="cm-ic">📤</div><div class="cm-n">Devolução</div>
+      <div class="cm-d">Selecionar gaiola · Montar · Resetar</div>
+    </div>
+    <div class="cm full" onclick="ir('salvados')" style="border-color:#CC0000">
+      <div class="cm-ic">🏷️</div><div class="cm-n">Etiqueta Salvados</div>
+      <div class="cm-d">DEVOS · Gerar etiqueta impressão Zebra</div>
+    </div>
+  </div>
+
+  <!-- ADMIN (só aparece se for admin) -->
+  <div id="adm-card-wrap" style="display:none;margin-top:10px">
+    <div class="slbl-sec" style="color:#7B1FA2">🔐 Administrador</div>
+    <div class="cm full" onclick="ir('admin')" style="border-color:#7B1FA2;background:linear-gradient(135deg,#fff,#F3E5F5)">
+      <div class="cm-ic">⚙️</div><div class="cm-n" style="color:#4A0072">Painel Admin</div>
+      <div class="cm-d">Mover pacotes · Apagar etiquetas · Usuários</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALOCAR ══ -->
+<div class="tela" id="tela-alocar">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Alocar Pacote</h2></div>
+
+  <!-- SCAN PACOTE -->
+  <div class="scard" style="margin-bottom:10px">
+    <div class="slbl">📷 ID do Pacote</div>
+    <div class="srow">
+      <input class="sinp" id="a-id" placeholder="Scan código de barras ou QR..."
+        onkeydown="if(event.key==='Enter'){aProcessarScan();}"
+        oninput="aChecarPacote()">
+      <button class="bok" onclick="aProcessarScan()">→</button>
+    </div>
+    <!-- Status do pacote -->
+    <div id="a-pkg-status" style="display:none;margin-top:8px;padding:8px 12px;border-radius:7px;font-size:12px;font-weight:600"></div>
+  </div>
+
+  <!-- ESCOLHA DA GAIOLA -->
+  <div id="a-gz-panel" style="display:none">
+    <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+      <span>🪧 Escolha a Gaiola</span>
+      <span style="font-size:10px;color:var(--navy);font-weight:700" id="a-sel-label">—</span>
+    </div>
+
+    <!-- ZONAS em accordion -->
+    <div id="a-zonas-grid" style="display:flex;flex-direction:column;gap:6px"></div>
+
+    <!-- OU scan QR manual -->
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+      <div style="flex:1;height:1px;background:#E0E0E0"></div>
+      <span style="font-size:10px;color:var(--gray)">ou scan QR da plaquinha</span>
+      <div style="flex:1;height:1px;background:#E0E0E0"></div>
+    </div>
+    <div class="srow" style="margin-top:8px">
+      <input class="sinp" id="a-gz" placeholder="Ex: D1, F3, S2..."
+        onkeydown="if(event.key==='Enter')alocar()"
+        oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase();aSelGaiola(this.value)">
+      <button class="bok" onclick="alocar()">✓</button>
+    </div>
+
+    <button class="bp" id="a-btn-alocar" onclick="alocar()" style="margin-top:10px;opacity:.4;pointer-events:none">
+      Alocar
+    </button>
+  </div>
+
+  <div class="sec" style="margin-top:14px"><h2>Alocações hoje</h2></div>
+  <div class="lista" id="a-lista"><div class="empty"><div class="ic">📋</div>Nenhuma alocação ainda</div></div>
+</div>
+
+<!-- ══ PAINEL ══ -->
+<div class="tela" id="tela-painel">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Painel Stage Zone</h2></div>
+  <div class="mapa-wrap">
+    <div class="mapa-title">
+      <span>GAIOLAS — coloridas = com pacotes · opacas = vazias</span>
+      <span id="p-resumo" style="font-size:11px;color:var(--navy);font-weight:700"></span>
+    </div>
+    <svg id="mapa-svg" viewBox="0 0 240 180" style="width:100%;display:block"></svg>
+    <div class="leg">
+      <div class="leg-i"><div class="leg-d" style="background:var(--dev)"></div>DEV</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--fin)"></div>FIN</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--mis)"></div>MIS</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--sid)"></div>SID</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--blk)"></div>BLK</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--ps)"></div>PS</div>
+    </div>
+  </div>
+  <div class="sec"><h2>Últimas alocações</h2></div>
+  <div class="lista" id="p-lista"><div class="empty"><div class="ic">📊</div>Nenhuma alocação</div></div>
+</div>
+
+<!-- ══ DEVOLUÇÃO ══ -->
+<div class="tela" id="tela-devol">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Montar Devolução</h2></div>
+  <div class="devol-wrap">
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px;line-height:1.5">Toque nas gaiolas que foram usadas para montar a devolução. <b>Coloridas</b> = com pacotes hoje.</div>
+    <svg id="devol-svg" viewBox="0 0 240 180" style="width:100%;display:block;cursor:pointer"></svg>
+    <button class="btn-montar" id="btn-montar" onclick="montarDevol()" disabled>✅ Confirmar Montagem e Resetar Gaiolas</button>
+  </div>
+  <div class="sec"><h2>Histórico</h2></div>
+  <div class="lista" id="devol-hist"><div class="empty"><div class="ic">📤</div>Nenhuma montagem</div></div>
+</div>
+
+<!-- ══ PS ══ -->
+<div class="tela" id="tela-ps">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Problem Solving</h2></div>
+  <div class="scard" style="margin-bottom:12px">
+    <div class="slbl">📷 ID do Pacote Avariado</div>
+    <div class="srow" style="margin-bottom:11px"><input class="sinp" id="ps-id" placeholder="Scan o pacote..."><button class="bok" onclick="document.getElementById('ps-desc').focus()">→</button></div>
+    <div class="slbl">📝 Descreva o dano</div>
+    <textarea id="ps-desc" style="width:100%;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:65px;outline:none" placeholder="Ex: Caixa aberta, 2 itens danificados..."></textarea>
+    <button class="bp" style="margin-top:10px" onclick="abrirPS()">Registrar PS</button>
+  </div>
+  <div class="sec"><h2>PS Registrados</h2></div>
+  <div id="ps-lista"><div class="empty"><div class="ic">⚠️</div>Nenhum PS</div></div>
+</div>
+
+<!-- ══ DESCARTE ══ -->
+<div class="tela" id="tela-descarte">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Embalagem Gaylord</h2></div>
+  <div style="background:var(--navy);border-radius:11px;padding:13px 16px;margin-bottom:12px;text-align:center">
+    <div style="font-size:11px;color:#8BA3CC">Gaylord ativo</div>
+    <div style="font-size:28px;font-weight:900;color:var(--yellow);letter-spacing:2px" id="d-gn">GAY-000001</div>
+    <div style="font-size:11px;color:#8BA3CC" id="d-qt">0 itens</div>
+  </div>
+  <div class="scard" style="margin-bottom:12px">
+    <div class="slbl">📷 Scan da embalagem</div>
+    <div class="srow"><input class="sinp" id="d-id" placeholder="Bipou o item..." onkeydown="if(event.key==='Enter')descarte()"><button class="bok" onclick="descarte()">✓</button></div>
+  </div>
+  <div class="sec"><h2>Itens descartados</h2></div>
+  <div class="lista" id="d-lista"><div class="empty"><div class="ic">📥</div>Nenhuma embalagem registrada</div></div>
+</div>
+
+<!-- ══ IDENTIFICAÇÕES + ETIQUETAS ══ -->
+<div class="tela" id="tela-ids">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Identificações</h2></div>
+
+  <!-- TABS -->
+  <div class="ids-tabs" style="flex-wrap:wrap;gap:5px">
+    <div class="ids-tab on" id="itab-zones" onclick="idTab('zones')" style="flex:1">🪧 Zonas</div>
+    <div class="ids-tab" id="itab-gay" onclick="idTab('gay')" style="flex:1">🏷️ Gaylord</div>
+    <div class="ids-tab" id="itab-sid" onclick="idTab('sid')" style="flex:1">🔍 Sem ID</div>
+  </div>
+
+  <!-- ABA ZONAS -->
+  <div id="ids-zones">
+    <div id="ids-lista"></div>
+    <button class="bp" style="margin-top:8px" onclick="toast('🖨️ Abrindo impressão...')">🖨️ Imprimir Todas</button>
+  </div>
+
+  <!-- ABA GAYLORD -->
+  <div id="ids-gay" style="display:none">
+    <div class="etiq">
+      <div class="etiq-topo" style="background:#37474F">
+        <div class="etiq-id" id="g-id">GAY-000001</div>
+        <div class="etiq-sub">_GAYLORD DESCARTE</div>
+      </div>
+      <div class="etiq-body">
+        <div class="etiq-info">
+          <div class="etiq-nome">GAYLORD DE DESCARTE · SMG6</div>
+          <div class="etiq-det" id="g-dt">📅 —</div>
+          <div class="etiq-det" id="g-op">👤 —</div>
+          <div class="etiq-det" id="g-qt">📦 0 itens</div>
+        </div>
+        <div class="etiq-qr" id="g-qr"></div>
+      </div>
+    </div>
+    <button class="bp" onclick="gerarGay()">➕ Gerar Novo Gaylord</button>
+    <button class="bp2" onclick="toast('🖨️ Enviando para Zebra...')">🖨️ Imprimir</button>
+    <div class="slbl-sec">Histórico</div>
+    <div class="lista" id="g-lista"><div class="empty"><div class="ic">🏷️</div>Nenhum gaylord</div></div>
+  </div>
+
+  <!-- ABA SEM ID -->
+  <div id="ids-sid" style="display:none">
+    <div class="etiq">
+      <div class="etiq-topo" style="background:var(--sid)">
+        <div class="etiq-id" id="s-id">SID-000001</div>
+        <div class="etiq-sub">_SEM IDENTIFICAÇÃO</div>
+      </div>
+      <div class="etiq-body">
+        <div class="etiq-info">
+          <div class="etiq-nome">SEM IDENTIFICAÇÃO · SMG6</div>
+          <div class="etiq-det" id="s-dt">📅 Gerado: —</div>
+          <div class="etiq-det" id="s-vf">🔍 0 verificações</div>
+          <div class="etiq-det" id="s-uv">🕐 Última: —</div>
+          <span class="vbadge" id="s-vb" style="background:#FFF3E0;color:var(--ps)">Aguardando verificação</span>
+        </div>
+        <div class="etiq-qr" id="s-qr"></div>
+      </div>
+    </div>
+    <button class="bp" onclick="gerarSID()">➕ Gerar Nova Etiqueta SID</button>
+    <div class="div"></div>
+    <div class="slbl">🔍 Verificar etiqueta (scan QR ou digitar)</div>
+    <div class="srow" style="margin-bottom:12px">
+      <input class="sinp" id="sv-inp" placeholder="SID-000001..." onkeydown="if(event.key==='Enter')verificarSID()">
+      <button class="bok" onclick="verificarSID()">✓</button>
+    </div>
+    <button class="bp2" onclick="toast('🖨️ Enviando para Zebra...')">🖨️ Imprimir</button>
+    <div class="slbl-sec">Etiquetas geradas</div>
+    <div class="lista" id="s-lista"><div class="empty"><div class="ic">🔍</div>Nenhuma etiqueta</div></div>
+  </div>
+
+  <!-- ABA ZEBRA -->
+  <div id="ids-zebra" style="display:none">
+    <!-- TIPO TABS -->
+    <div style="display:flex;border:1.5px solid #DDD;border-radius:7px;overflow:hidden;margin-bottom:12px">
+      <button class="eti-tab on" id="et-semid" onclick="etiSetT('semid')" style="flex:1;padding:8px;background:var(--navy);color:var(--yellow);border:none;font-weight:700;font-size:11px;cursor:pointer">SEM ID</button>
+      <button class="eti-tab" id="et-gaylord" onclick="etiSetT('gaylord')" style="flex:1;padding:8px;background:#fff;color:var(--gray);border:none;font-weight:700;font-size:11px;cursor:pointer;border-left:1px solid #DDD">Gaylord</button>
+      <button class="eti-tab" id="et-devos" onclick="etiSetT('devos')" style="flex:1;padding:8px;background:#fff;color:var(--gray);border:none;font-weight:700;font-size:11px;cursor:pointer;border-left:1px solid #DDD">DEVOS</button>
+    </div>
+
+    <!-- FORM SEM ID -->
+    <div id="ef-semid" class="scard">
+      <div class="slbl">Operação</div>
+      <select id="es-op" onchange="etiUpdS()" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:8px 10px;font-size:13px;margin-bottom:10px;outline:none">
+        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option><option>GYN</option><option>POA</option>
+      </select>
+      <div class="slbl">Número inicial</div>
+      <input id="es-num" type="number" value="2211" min="1" class="sinp" style="margin-bottom:10px" oninput="etiUpdS()">
+      <div style="background:#F0F2F5;border-radius:7px;padding:8px 12px;text-align:center;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:10px" id="es-prev">SEMID_SMG6_2211</div>
+      <div class="slbl">Quantidade</div>
+      <div style="display:flex;gap:7px;align-items:center;margin-bottom:0">
+        <button class="bok" onclick="etiChg('es-qty',-1)" style="padding:10px 14px">−</button>
+        <input id="es-qty" type="number" value="1" min="1" max="50" class="sinp">
+        <button class="bok" onclick="etiChg('es-qty',1)" style="padding:10px 14px">+</button>
+      </div>
+    </div>
+
+    <!-- FORM GAYLORD -->
+    <div id="ef-gaylord" class="scard" style="display:none">
+      <div class="slbl">Operação</div>
+      <select id="eg-op" onchange="etiUpdG()" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:8px 10px;font-size:13px;margin-bottom:10px;outline:none">
+        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option><option>GYN</option>
+      </select>
+      <div class="slbl">Número inicial</div>
+      <input id="eg-num" type="number" value="184" min="1" class="sinp" style="margin-bottom:10px" oninput="etiUpdG()">
+      <div style="background:#F0F2F5;border-radius:7px;padding:8px 12px;text-align:center;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:10px" id="eg-prev">G184_SMG6</div>
+      <div class="slbl">Quantidade</div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="bok" onclick="etiChg('eg-qty',-1)" style="padding:10px 14px">−</button>
+        <input id="eg-qty" type="number" value="1" min="1" max="50" class="sinp">
+        <button class="bok" onclick="etiChg('eg-qty',1)" style="padding:10px 14px">+</button>
+      </div>
+    </div>
+
+    <!-- FORM DEVOS -->
+    <div id="ef-devos" class="scard" style="display:none">
+      <div class="slbl">Operação</div>
+      <select id="ed-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:8px 10px;font-size:13px;margin-bottom:10px;outline:none">
+        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option><option>GYN</option>
+      </select>
+      <div class="slbl">Nº do Chamado (SHP-X)</div>
+      <input id="ed-chamado" type="text" placeholder="SHP-1" class="sinp" style="margin-bottom:10px">
+      <div class="slbl">Descrição do produto</div>
+      <textarea id="ed-desc" placeholder="Ex: bicicleta spinning..." style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit;resize:none;min-height:55px;outline:none;margin-bottom:10px"></textarea>
+      <div class="slbl">Nº do Pacote (SEMID)</div>
+      <input id="ed-pacote" type="text" placeholder="SEMID_SMG6_2211" class="sinp" style="margin-bottom:10px">
+      <div class="slbl">Quantidade</div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="bok" onclick="etiChg('ed-qty',-1)" style="padding:10px 14px">−</button>
+        <input id="ed-qty" type="number" value="1" min="1" max="20" class="sinp">
+        <button class="bok" onclick="etiChg('ed-qty',1)" style="padding:10px 14px">+</button>
+      </div>
+    </div>
+
+    <button class="bp" onclick="etiGerar()" style="margin-bottom:8px">▶ Gerar Etiquetas</button>
+    <button class="bp2" id="eti-pdf-btn" onclick="etiGerarPDF()">📄 Baixar PDF · Zebra 100×150mm</button>
+
+    <!-- PREVIEW -->
+    <div class="slbl-sec">Pré-visualização</div>
+    <div id="eti-grid" style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0">
+      <div style="color:var(--gray);font-size:12px;padding:20px;width:100%;text-align:center">🏷️ Clique em Gerar Etiquetas</div>
+    </div>
+
+    <!-- DICA -->
+    <div style="background:#F8F9FF;border:1px solid #DDD;border-radius:8px;padding:12px;margin-top:12px;font-size:11px;color:var(--gray);line-height:1.8">
+      <b style="color:var(--navy)">🦓 Como imprimir na Zebra ZT430 Plus:</b><br>
+      1. Abra o PDF no <b>Adobe Acrobat Reader</b><br>
+      2. Arquivo → Imprimir<br>
+      3. Selecione a <b>Zebra ZT430 Plus</b><br>
+      4. Tamanho: marque <b>"Tamanho real"</b><br>
+      5. ❌ NÃO marque Ajustar/Reduzir/Encaixar<br>
+      6. ✅ Imprimir
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div class="tela" id="tela-admin">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>⚙️ Painel Admin</h2></div>
+  <div style="background:linear-gradient(135deg,#4A0072,#7B1FA2);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:28px">🔐</div>
+    <div><div style="font-size:13px;font-weight:700;color:#fff" id="adm-nome">Admin</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.7)">Acesso total · SMG6</div></div>
+  </div>
+
+  <!-- GESTÃO DE PACOTES -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">📦 Gestão de Pacotes</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <!-- Mover pacote -->
+      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">↔️ Mover Pacote de Gaiola</div>
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <input id="adm-mv-id" class="sinp" placeholder="ID do pacote" style="font-size:12px;padding:8px 10px">
+        </div>
+        <div style="display:flex;gap:6px">
+          <input id="adm-mv-de" class="sinp" placeholder="De: D1" style="font-size:12px;padding:8px 10px;flex:1" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase()">
+          <div style="display:flex;align-items:center;color:var(--gray);font-size:16px">→</div>
+          <input id="adm-mv-para" class="sinp" placeholder="Para: F2" style="font-size:12px;padding:8px 10px;flex:1" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,'').toUpperCase()">
+          <button class="bok" onclick="admMoverPacote()" style="padding:8px 12px">✓</button>
+        </div>
+      </div>
+      <!-- Retirar pacote -->
+      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">✂️ Retirar Pacote da Gaiola</div>
+        <div style="display:flex;gap:6px">
+          <input id="adm-del-id" class="sinp" placeholder="ID do pacote" style="font-size:12px;padding:8px 10px">
+          <button class="bok" style="background:var(--red);padding:8px 12px" onclick="admRetirarPacote()">×</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GESTÃO DE ETIQUETAS -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">🏷️ Gestão de Etiquetas</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <!-- Apagar etiqueta SID -->
+      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🗑️ Apagar Etiqueta Sem ID</div>
+        <div style="display:flex;gap:6px">
+          <input id="adm-del-sid" class="sinp" placeholder="SID-000001" style="font-size:12px;padding:8px 10px">
+          <button class="bok" style="background:var(--red);padding:8px 12px" onclick="admApagarSID()">×</button>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:5px" id="adm-sid-list"></div>
+      </div>
+      <!-- Apagar etiqueta Gaylord -->
+      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🗑️ Apagar Gaylord</div>
+        <div style="display:flex;gap:6px">
+          <input id="adm-del-gay" class="sinp" placeholder="GAY-000001" style="font-size:12px;padding:8px 10px">
+          <button class="bok" style="background:var(--red);padding:8px 12px" onclick="admApagarGay()">×</button>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-top:5px" id="adm-gay-list"></div>
+      </div>
+      <!-- Gerar etiquetas avulsas -->
+      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">➕ Gerar Etiquetas SID Avulsas</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input id="adm-gen-qty" type="number" value="1" min="1" max="50" class="sinp" style="font-size:12px;padding:8px 10px;width:80px;text-align:center">
+          <span style="font-size:12px;color:var(--gray)">etiqueta(s)</span>
+          <button class="bok" style="flex:1" onclick="admGerarSID()">Gerar →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GESTÃO DE USUÁRIOS -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">👥 Usuários Cadastrados</div>
+    <div id="adm-users-list" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div style="margin-top:10px">
+      <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🔑 Código Admin Atual</div>
+      <div style="display:flex;gap:6px">
+        <input id="adm-code-inp" class="sinp" placeholder="Novo código admin" style="font-size:12px;padding:8px 10px">
+        <button class="bok" onclick="admMudarCodigo()">✓</button>
+      </div>
+      <div style="font-size:10px;color:var(--gray);margin-top:4px">Código atual: <b id="adm-code-show">***</b></div>
+    </div>
+  </div>
+
+  <!-- DADOS -->
+  <div class="exp-section">
+    <div class="exp-title">📊 Dados do Sistema</div>
+    <div style="display:flex;flex-direction:column;gap:6px" id="adm-stats"></div>
+    <button class="bp2" style="margin-top:10px" onclick="admLimparDia()">🗑️ Limpar dados do dia anterior</button>
+  </div>
+</div>
+
+<!-- ══ SALVADOS / DEVOS ══ -->
+<div class="tela" id="tela-salvados">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Etiqueta Salvados</h2></div>
+  
+  <div class="scard" style="margin-bottom:12px">
+    <div class="slbl" style="margin-bottom:8px">Operação</div>
+    <select id="ed-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:11px;outline:none">
+      <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option><option>GYN</option>
+    </select>
+    <div class="slbl" style="margin-bottom:5px">Nº do Chamado</div>
+    <input id="ed-chamado2" type="text" placeholder="SHP-1" class="sinp" style="margin-bottom:11px">
+    <div class="slbl" style="margin-bottom:5px">Descrição do produto</div>
+    <textarea id="ed-desc2" placeholder="Ex: bicicleta spinning, caixa de som..." style="width:100%;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:55px;outline:none;margin-bottom:11px"></textarea>
+    <div class="slbl" style="margin-bottom:5px">Nº do Pacote (SEMID)</div>
+    <input id="ed-pacote2" type="text" placeholder="SEMID_SMG6_2211" class="sinp" style="margin-bottom:11px">
+    <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:0">
+      <button class="bok" onclick="salvChg(-1)" style="padding:10px 16px;font-size:16px">−</button>
+      <input id="ed-qty2" type="number" value="1" min="1" max="20" class="sinp" style="text-align:center">
+      <button class="bok" onclick="salvChg(1)" style="padding:10px 16px;font-size:16px">+</button>
+    </div>
+  </div>
+
+  <button class="bp" onclick="salvGerar()" style="margin-bottom:8px">▶ Gerar Etiquetas Salvados</button>
+  <button class="bp2" id="salv-imp-btn" onclick="salvImprimir()">🖨️ Imprimir · Zebra 100×150mm</button>
+
+  <div class="slbl-sec">Pré-visualização</div>
+  <div id="salv-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
+    <div style="color:var(--gray);font-size:12px;padding:20px;text-align:center;width:100%">🏷️ Clique em Gerar para visualizar</div>
+  </div>
+
+  <div style="background:#FFF3E0;border:1px solid #FF8F00;border-radius:8px;padding:12px;margin-top:14px;font-size:11px;color:#795548;line-height:1.8">
+    <b style="color:#E65100">🦓 Como imprimir na Zebra ZT430 Plus:</b><br>
+    1. Clique em <b>Imprimir</b> — abrirá uma nova janela<br>
+    2. No diálogo de impressão, selecione a <b>Zebra ZT430 Plus</b><br>
+    3. Tamanho do papel: <b>100mm × 150mm</b> (ou 4" × 6")<br>
+    4. Margens: <b>Nenhuma / None</b><br>
+    5. Escala: <b>100% — Tamanho real</b><br>
+    6. ✅ Imprimir
+  </div>
+</div>
+
+<!-- ══ EXPEDIÇÃO HU ══ -->
+<div class="tela" id="tela-expedicao">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Expedição HU</h2></div>
+
+  <!-- HU BANNER -->
+  <div class="hu-banner">
+    <div>
+      <div style="font-size:10px;color:#8BA3CC">HU em aberto</div>
+      <div class="hu-banner-id" id="e-hu">HU_001</div>
+      <div class="sb-status"><div class="db-dot" id="e-dbdot"></div><span id="e-dblbl" style="color:#8BA3CC;font-size:10px">Supabase</span></div>
+    </div>
+    <div class="hu-banner-r">
+      <div class="hu-banner-qt" id="e-qt">0</div>
+      <div class="hu-banner-lbl">pacotes</div>
+    </div>
+  </div>
+
+  <!-- CONFIG HU -->
+  <div class="exp-section">
+    <div class="exp-title">⚙️ Configuração do HU</div>
+    <div class="hu-cfg">
+      <div class="hf"><label>Nº HU</label><input id="e-num" value="HU_001" oninput="document.getElementById('e-hu').textContent=this.value"/></div>
+      <div class="hf"><label>Data</label><input type="date" id="e-data"/></div>
+      <div class="hf hu-cfg-full"><label>Destino (XD/FULL)</label><input id="e-dest" placeholder="BRXSP5 - Cravinhos"/></div>
+      <div class="hf"><label>Sacas</label><input type="number" id="e-sacas" placeholder="0"/></div>
+      <div class="hf"><label>Pallets</label><input type="number" id="e-pallets" placeholder="0"/></div>
+      <div class="hf hu-cfg-full"><label>Lacre Origen</label><input id="e-lacre" placeholder="000123"/></div>
+    </div>
+  </div>
+
+  <!-- SCANNER -->
+  <div class="exp-section">
+    <div class="exp-title">📷 Scanner</div>
+    <div class="exp-scan">
+      <input id="e-scan" placeholder="Bipe o código (Enter para adicionar)..." onkeydown="if(event.key==='Enter')expScan()" autocomplete="off"/>
+      <button class="bok" onclick="expScan()">+</button>
+    </div>
+    <div class="exp-fb" id="e-fb"></div>
+    <!-- LOTE -->
+    <div class="slbl" style="margin-bottom:4px">Importar em lote (um por linha)</div>
+    <textarea class="batch-area" id="e-batch" placeholder="47347734675&#10;47347734676&#10;..."></textarea>
+    <div style="display:flex;gap:7px">
+      <button class="bp" style="flex:1;padding:9px" onclick="expBatch()">📥 Importar IDs</button>
+      <button class="bp2" style="flex:1;padding:9px;margin-top:0" onclick="document.getElementById('e-batch').value=''">Limpar</button>
+    </div>
+
+    <!-- MOTIVO PADRÃO -->
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+      <div class="slbl" style="margin-bottom:0;flex-shrink:0">Motivo padrão:</div>
+      <select id="e-motpadrao" style="flex:1;border:1.5px solid #DDD;border-radius:7px;padding:7px 9px;font-size:12px;outline:none" onchange="expBuildOpts()"></select>
+      <button class="bp2" style="margin-top:0;padding:7px 10px;font-size:11px;white-space:nowrap" onclick="expAplicarPadrao()">Aplicar a todos</button>
+    </div>
+    <!-- GERENCIAR MOTIVOS -->
+    <button style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;margin-top:8px;font-weight:600" onclick="document.getElementById('e-mgr').style.display=document.getElementById('e-mgr').style.display==='none'?'block':'none'">▾ Gerenciar motivos</button>
+    <div id="e-mgr" style="display:none">
+      <div class="motivo-mgr-wrap">
+        <div id="e-moti-tags" style="margin-bottom:8px"></div>
+        <textarea class="batch-area" id="e-new-mot" placeholder="Novo motivo (um por linha)" style="min-height:48px"></textarea>
+        <button class="bp2" style="margin-top:4px;padding:7px" onclick="expAddMotivos()">+ Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="exp-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="exp-title" style="margin-bottom:0">📋 Pacotes (<span id="e-pkgct">0</span>)</div>
+      <button class="bp2" style="padding:5px 10px;margin-top:0;font-size:11px" onclick="expClearAll()">🗑️ Limpar</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="exp-tbl">
+        <thead><tr><th>#</th><th>Shipment</th><th>Motivo</th><th></th></tr></thead>
+        <tbody id="e-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="exp-section">
+    <div class="exp-title">📤 Exportar</div>
+    <div class="exp-actions">
+      <button class="btn-exp yellow" onclick="expTudo()">⚡ Tudo</button>
+      <button class="btn-exp navy" onclick="expSB()">💾 Supabase</button>
+      <button class="btn-exp green" onclick="expXLSX()">📊 XLSX</button>
+      <button class="btn-exp blue" onclick="expCSV()">📄 CSV</button>
+      <button class="btn-exp outline" onclick="expEmail()">✉️ Email</button>
+    </div>
+    <div id="e-savest" style="font-size:11px;margin-top:8px;display:none;padding:6px 10px;border-radius:6px"></div>
+    <!-- EMAIL -->
+    <div style="margin-top:10px">
+      <div class="slbl" style="margin-bottom:4px">Destinatários</div>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <input id="e-email" type="email" placeholder="email@mercadolivre.com" style="flex:1;border:1.5px solid #DDD;border-radius:7px;padding:8px 10px;font-size:12px;outline:none" onkeydown="if(event.key==='Enter')expAddEmail()">
+        <button class="bok" onclick="expAddEmail()">+</button>
+      </div>
+      <div id="e-etags" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    </div>
+  </div>
+
+  <!-- HUs fechados -->
+  <div class="slbl-sec">HUs Expedidos</div>
+  <div class="lista" id="e-hus"><div class="empty"><div class="ic">📦</div>Nenhum HU expedido</div></div>
+</div>
+
+<!-- GUIA FLUTUANTE -->
+<button id="guide-btn" onclick="guideOpen()"
+  style="display:none;position:fixed;bottom:80px;right:16px;width:46px;height:46px;border-radius:50%;
+         background:var(--navy);color:var(--yellow);border:none;font-size:20px;cursor:pointer;
+         box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:99;font-weight:900">?</button>
+
+<!-- MODAL GUIA -->
+<div id="guide-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;overflow-y:auto">
+  <div style="background:#fff;border-radius:16px 16px 0 0;margin-top:40px;padding:20px 16px 80px;min-height:calc(100vh - 40px)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:16px;font-weight:900;color:var(--navy)">📖 Guia do Operador</div>
+        <div style="font-size:11px;color:var(--gray)">Zona PS & Stage Zone — SMG6</div>
+      </div>
+      <button onclick="guideClose()" style="background:#F0F2F5;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer">×</button>
+    </div>
+
+    <!-- PASSO 1 -->
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="background:var(--dev);padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">📦</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Alocar Pacote</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.7);margin-left:auto">T1 · 22h–11h</span>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
+        1️⃣ Bipou o <b>código de barras</b> do pacote<br>
+        2️⃣ O painel de gaiolas aparece automaticamente<br>
+        3️⃣ Toque na <b>gaiola de destino</b> (colorida por zona)<br>
+        4️⃣ Clique <b>Alocar</b> — pronto!<br>
+        <span style="font-size:10px;color:var(--gray)">💡 Se tiver QR na plaquinha, pode escanear direto</span>
+      </div>
+    </div>
+
+    <!-- PASSO 2 -->
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="background:var(--navy);padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🗺️</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Painel Stage Zone</span>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
+        🔵 <b>Gaiolas coloridas</b> = têm pacotes alocados<br>
+        ⚪ <b>Gaiolas opacas</b> = estão vazias<br>
+        🔢 <b>Número amarelo</b> = quantidade de pacotes<br>
+        <span style="font-size:10px;color:var(--gray)">Consulte sempre que precisar saber onde estão os pacotes</span>
+      </div>
+    </div>
+
+    <!-- PASSO 3 -->
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="background:#37474F;padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">📥</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Embalagem Gaylord</span>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
+        1️⃣ Veja qual <b>Gaylord está ativo</b> (mostrado no topo)<br>
+        2️⃣ Bipou o item que vai entrar no gaylord<br>
+        3️⃣ O registro é feito automaticamente<br>
+        <span style="font-size:10px;color:var(--gray)">💡 Gaylords são gerados em Identificações → Gaylord</span>
+      </div>
+    </div>
+
+    <!-- PASSO 4 -->
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="background:var(--sid);padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🔍</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Sem Identificação (SID)</span>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
+        1️⃣ Pacote chegou sem etiqueta? Gere um <b>SID</b><br>
+        2️⃣ Cole a etiqueta no pacote<br>
+        3️⃣ A cada verificação, bipou o QR da etiqueta<br>
+        4️⃣ O sistema registra <b>quantas vezes foi verificado</b><br>
+        <span style="font-size:10px;color:var(--gray)">SLA: 3 a 5 dias para identificar o pacote</span>
+      </div>
+    </div>
+
+    <!-- PASSO 5 -->
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="background:var(--fin);padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🚚</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Expedição HU Finalizador</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.7);margin-left:auto">T2</span>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
+        1️⃣ Configure o HU (número, destino, data)<br>
+        2️⃣ Bipou cada pacote finalizador<br>
+        3️⃣ Atribua o <b>motivo</b> para cada pacote<br>
+        4️⃣ Exporte: <b>Supabase + XLSX + CSV + Email</b><br>
+        5️⃣ Feche o HU quando terminar
+      </div>
+    </div>
+
+    <!-- PASSO 6 -->
+    <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="background:var(--blk);padding:10px 14px;display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">📤</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Devolução</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.7);margin-left:auto">T2</span>
+      </div>
+      <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
+        1️⃣ Veja o mapa — <b>gaiolas coloridas</b> têm pacotes<br>
+        2️⃣ Toque nas gaiolas que usou para montar a devolução<br>
+        3️⃣ Confirme — as gaiolas são <b>resetadas</b> automaticamente<br>
+        <span style="font-size:10px;color:var(--gray)">SLA: 24 a 48 horas</span>
+      </div>
+    </div>
+
+    <!-- CORES -->
+    <div style="background:#F8F9FF;border-radius:10px;padding:12px 14px">
+      <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🎨 Cores das Zonas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:#E65100;flex-shrink:0"></div>Devolução (D1–D5)</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:#7B1FA2;flex-shrink:0"></div>Finalizador (F1–F5)</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:#C62828;flex-shrink:0"></div>Missort (M1–M5)</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:#6A1B9A;flex-shrink:0"></div>Sem ID (S1–S10)</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:#1565C0;flex-shrink:0"></div>Bulky (B1–B3)</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px"><div style="width:12px;height:12px;border-radius:3px;background:#FF8F00;flex-shrink:0"></div>PS (PS1–PS4)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bnav" id="bnav" style="display:none">
+  <button class="ni on" id="n-dash" onclick="ir('dash')"><span class="ic">🏠</span>Início</button>
+  <button class="ni" id="n-alocar" onclick="ir('alocar')"><span class="ic">📦</span>Alocar</button>
+  <button class="ni" id="n-painel" onclick="ir('painel')"><span class="ic">🗺️</span>Painel SZ</button>
+  <button class="ni" id="n-descarte" onclick="ir('descarte')"><span class="ic">📥</span>Embalagem</button>
+  <button class="ni" id="n-ids" onclick="ir('ids')"><span class="ic">🪧</span>IDs</button>
+</div>
+
+<script>
+// ── CONFIG ──
+const SB_URL='https://lgtwxwaadmvbogdalqge.supabase.co';
+const SB_KEY='sb_publishable_1w86IBJmEzHqwHjZt8_5_g_0o1rZ49Q';
+
+// ── DB LOCAL ──
+// ── GRID SDK BRIDGE ──
+const DOC_ID = window.location.pathname.split('/')[2] || 'local';
+let _gridState = {};
+let _gridReady = false;
+
+async function gridInit(){
+  if(typeof Grid !== 'undefined'){
+    try{
+      Grid.configure({docId: DOC_ID});
+      const r = await Grid.getData();
+      if(r && r.state && r.state.smg6) _gridState = r.state.smg6;
+      _gridReady = true;
+      console.log('✅ Grid SDK conectado');
+    }catch(e){ console.warn('Grid SDK fallback para localStorage:', e); }
+  }
+}
+
+async function gridSave(){
+  if(_gridReady && typeof Grid !== 'undefined'){
+    try{ await Grid.setData({state:{smg6:_gridState}}); }
+    catch(e){ console.warn('Grid save error:', e); }
+  }
+}
+
+// ── DB (localStorage + Grid fallback) ──
+const DB={
+  g(k){
+    if(_gridReady && _gridState[k] !== undefined) return _gridState[k];
+    try{return JSON.parse(localStorage.getItem('smg6_'+k))||null}catch{return null}
+  },
+  s(k,v){
+    if(_gridReady){ _gridState[k]=v; gridSave(); }
+    try{localStorage.setItem('smg6_'+k,JSON.stringify(v))}catch(e){}
+  },
+  ga(k){return DB.g(k)||[]},
+  push(k,v){const a=DB.ga(k);a.unshift(v);DB.s(k,a)}
+};
+let U=DB.g('user');
+
+// ── ZONAS ──
+const ZONAS=[
+  {key:'dev',cor:'#E65100',ids:['D1','D2','D3','D4','D5']},
+  {key:'fin',cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5']},
+  {key:'mis',cor:'#C62828',ids:['M1','M2','M3','M4','M5']},
+  {key:'sid',cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10']},
+  {key:'blk',cor:'#1565C0',ids:['B1','B2','B3']},
+  {key:'ps', cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4']},
+];
+const COR=id=>{for(const z of ZONAS)if(z.ids.includes(id.toUpperCase()))return z.cor;return '#888'};
+
+// ── LAYOUT GAIOLAS SVG (viewBox 240x180) ──
+// Apenas as gaiolas, limpo e organizado
+const GMAP=[
+  // DEV — col vertical esquerda
+  ...[0,1,2,3,4].map(i=>({id:'D'+(i+1),x:4,y:4+i*22,w:28,h:19,cor:'#E65100'})),
+  // FIN + MIS — costas com costas
+  ...[0,1,2,3,4].map(i=>({id:'F'+(i+1),x:38,y:4+i*22,w:24,h:19,cor:'#7B1FA2'})),
+  ...[0,1,2,3,4].map(i=>({id:'M'+(i+1),x:62,y:4+i*22,w:24,h:19,cor:'#C62828'})),
+  // SID — costas com costas (x2)
+  ...[0,1,2,3,4].map(i=>({id:'S'+(i+1),x:94,y:4+i*22,w:24,h:19,cor:'#6A1B9A'})),
+  ...[0,1,2,3,4].map(i=>({id:'S'+(i+6),x:118,y:4+i*22,w:24,h:19,cor:'#6A1B9A'})),
+  // BLK — coluna vertical
+  ...[0,1,2].map(i=>({id:'B'+(i+1),x:150,y:4+i*22,w:28,h:19,cor:'#1565C0'})),
+  // PS — linha inferior
+  ...[0,1,2,3].map(i=>({id:'PS'+(i+1),x:4+i*46,y:126,w:42,h:20,cor:'#FF8F00'})),
+];
+
+function gerarSVG(svgId,usadas,processadas,clicavel){
+  const svg=document.getElementById(svgId);if(!svg)return;
+  const cnt={};
+  if(usadas)usadas.forEach(r=>{const g=typeof r==='string'?r:r.gaiola;cnt[g]=(cnt[g]||0)+1});
+  const proc=processadas||new Set();
+  let h='';
+  GMAP.forEach(g=>{
+    const cheia=!!(cnt[g.id]);
+    const proc_=proc.has&&proc.has(g.id);
+    const op=cheia?1:.18; // processadas voltam opacas
+    const fill=g.cor; // processadas voltam opacas como vazias
+    const fs=g.id.length>3?6.5:7.5;
+    const click=clicavel?`onclick="toggleDevol('${g.id}',event.currentTarget)"`:'' ;
+    const border=cheia?'rgba(255,255,255,.4)':'rgba(255,255,255,.15)';
+    h+=`<g data-id="${g.id}" style="opacity:${op};cursor:${clicavel?'pointer':'default'}" ${click}>
+      <rect x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="3" fill="${fill}" stroke="${border}" stroke-width="1"/>
+      <text x="${g.x+g.w/2}" y="${g.y+g.h/2+2.5}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="${fs}" font-weight="700" font-family="Arial">${g.id}</text>
+      ${cheia&&cnt[g.id]>1?`<circle cx="${g.x+g.w-3}" cy="${g.y+3}" r="4" fill="#FFE600"/><text x="${g.x+g.w-3}" y="${g.y+3}" text-anchor="middle" dominant-baseline="middle" fill="#111" font-size="5" font-weight="900" font-family="Arial">${cnt[g.id]}</text>`:''}
+    </g>`;
+  });
+  svg.innerHTML=h;
+}
+
+// ── TOAST ──
+function toast(m){const a=document.getElementById('al');a.textContent=m;a.classList.add('on');setTimeout(()=>a.classList.remove('on'),2500)}
+
+// ── LOGIN ──
+// ── FUNÇÕES DE LOGIN ──
+function showTab(tab){
+  var isEntrar = tab === 'entrar';
+  document.getElementById('form-entrar').style.display = isEntrar ? 'block' : 'none';
+  document.getElementById('form-novo').style.display   = isEntrar ? 'none'  : 'block';
+  document.getElementById('tab-entrar').style.background = isEntrar ? 'var(--navy)' : '#fff';
+  document.getElementById('tab-entrar').style.color      = isEntrar ? 'var(--yellow)' : 'var(--navy)';
+  document.getElementById('tab-novo').style.background   = isEntrar ? '#fff' : 'var(--navy)';
+  document.getElementById('tab-novo').style.color        = isEntrar ? 'var(--navy)' : 'var(--yellow)';
+  if(!isEntrar) setTimeout(function(){ var el=document.getElementById('r-lw'); if(el)el.focus(); }, 100);
+}
+
+function msgErro(id, txt){
+  var el = document.getElementById(id);
+  if(el) el.innerHTML = '<div style="background:#FFEBEE;color:#C62828;border:1px solid #C62828;border-radius:7px;padding:9px 12px;font-size:12px">' + txt + '</div>';
+}
+function msgOk(id, txt){
+  var el = document.getElementById(id);
+  if(el) el.innerHTML = '<div style="background:#E8F5E9;color:#2E7D32;border:1px solid #2E7D32;border-radius:7px;padding:9px 12px;font-size:12px">' + txt + '</div>';
+}
+
+function fazerLogin(){
+  var lw    = document.getElementById('l-lw').value.trim();
+  var senha = document.getElementById('l-senha').value;
+  if(!lw)   { msgErro('msg-login','Informe o usuário LDPA'); return; }
+  if(!senha) { msgErro('msg-login','Informe a senha'); return; }
+  var users = DB.ga('users');
+  var u = null;
+  for(var i=0;i<users.length;i++){
+    if(users[i].lw && users[i].lw.toLowerCase()===lw.toLowerCase() && users[i].senha===senha){ u=users[i]; break; }
+  }
+  if(!u){ msgErro('msg-login','Usuário LDPA ou senha incorretos'); return; }
+  DB.s('user', u);
+  U = u;
+  entrar();
+}
+
+function fazerRegistro(){
+  var lw    = document.getElementById('r-lw').value.trim();
+  var nome  = document.getElementById('r-nome').value.trim();
+  var sobre = document.getElementById('r-sobre').value.trim();
+  var senha = document.getElementById('r-senha').value;
+  var conf  = document.getElementById('r-conf').value;
+  var adminCode = (document.getElementById('r-admin-code')||{}).value||'';
+  if(!lw)    { msgErro('msg-reg','Informe o usuário LDPA'); return; }
+  if(!nome)  { msgErro('msg-reg','Informe o nome'); return; }
+  if(!sobre) { msgErro('msg-reg','Informe o sobrenome'); return; }
+  if(senha.length < 4){ msgErro('msg-reg','Senha mínimo 4 caracteres'); return; }
+  if(senha !== conf)  { msgErro('msg-reg','Senhas não conferem'); return; }
+  var users = DB.ga('users');
+  for(var i=0;i<users.length;i++){
+    if(users[i].lw && users[i].lw.toLowerCase()===lw.toLowerCase()){ msgErro('msg-reg','Usuário LDPA já cadastrado'); return; }
+  }
+  // Primeiro usuário vira admin automaticamente
+  var isAdminUser = users.length === 0;
+  // Ou se inseriu o código admin correto
+  if(!isAdminUser && adminCode && adminCode === getAdminCode()) isAdminUser = true;
+  var u = { lw:lw, nome:nome, sobrenome:sobre, senha:senha, id:Date.now(), admin:isAdminUser };
+  users.push(u);
+  DB.s('users', users);
+  DB.s('user', u);
+  U = u;
+  // Salva no Supabase
+  sbInsert('usuarios', {lw:lw, nome:nome, sobrenome:sobre, senha:senha, admin:isAdminUser});
+  msgOk('msg-reg','✅ Conta criada'+(isAdminUser?' (Admin)':'')+' Entrando...');
+  setTimeout(entrar, 800);
+}
+function entrar(){
+  if(!U){console.error('entrar() chamado sem usuário');return;}
+  // Esconde TODAS as telas
+  document.querySelectorAll('.tela').forEach(function(e){
+    e.style.cssText='display:none!important';
+    e.classList.remove('ativa');
+  });
+  // Esconde login especificamente
+  const tLogin=document.getElementById('tela-login');
+  if(tLogin) tLogin.style.cssText='display:none!important';
+  // Mostra header e nav
+  const hdr=document.getElementById('hdr');
+  const bnav=document.getElementById('bnav');
+  if(hdr) hdr.style.display='flex';
+  if(bnav) bnav.style.display='flex';
+  // Nome no header
+  var hn=document.getElementById('hdr-n');
+  if(hn && U) hn.textContent=(U.lw||U.nome)+' · '+U.nome;
+  // Mostra dashboard
+  const dash=document.getElementById('tela-dash');
+  if(dash){dash.style.cssText='display:block!important;padding:12px;padding-bottom:80px';dash.classList.add('ativa');}
+  // Renderiza dashboard
+  try{ rDash(); }catch(e){ console.warn('rDash:',e); }
+  // Nav ativo
+  document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('on');});
+  const ndash=document.getElementById('n-dash');
+  if(ndash) ndash.classList.add('on');
+  // Inicia expedição com delay
+  setTimeout(function(){try{expInit();}catch(e){console.warn('expInit:',e);}},200);
+  // Mostra botão admin se for admin
+  var admCard = document.getElementById('adm-card-wrap');
+  if(admCard) admCard.style.display = isAdmin() ? 'block' : 'none';
+  // Inicia Supabase em background
+  gridInit().catch(function(e){console.warn(e);});
+  // Mostra botão guia
+  var guideBtn = document.getElementById('guide-btn');
+  if(guideBtn) guideBtn.style.display = 'flex';
+  if(guideBtn) guideBtn.style.alignItems = 'center';
+  if(guideBtn) guideBtn.style.justifyContent = 'center';
+  // Mostra campo admin no registro se já existem usuários
+  checkShowAdminField();
+}
+function logout(){DB.s('user',null);location.reload()}
+
+// ── NAVEGAÇÃO ──
+function ir(t){
+  document.querySelectorAll('.tela').forEach(e=>{e.classList.remove('ativa');e.style.display='none';});
+  const tela=document.getElementById('tela-'+t);
+  if(tela){tela.classList.add('ativa');tela.style.display='block';}
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const nm=document.getElementById('n-'+t);if(nm)nm.classList.add('on');
+  window.scrollTo(0,0);
+  const fn={dash:rDash,alocar:rAlocar,painel:rPainel,devol:rDevol,ps:rPS,descarte:rDescarte,ids:rIds,expedicao:rExp,salvados:function(){},admin:rAdmin};
+  if(fn[t])fn[t]();
+}
+
+// ── IDS TABS ──
+function idTab(tab){
+  ['zones','gay','sid'].forEach(t=>{
+    const secEl=document.getElementById('ids-'+t);
+    if(secEl)secEl.style.display=t===tab?'block':'none';
+    const tabEl=document.getElementById('itab-'+t);
+    if(tabEl)tabEl.className='ids-tab'+(t===tab?' on':'');
+  });
+  if(tab==='gay')rGay();
+  if(tab==='sid')rSID();
+}
+
+// ── DASHBOARD ──
+function rDash(){
+  const h=new Date().getHours();
+  const isT1=h>=22||h<11;
+  document.getElementById('tn').textContent='Olá, '+(U?U.nome||U.lw||'Operador':'Operador')+'! 👋';
+  document.getElementById('ts').textContent=isT1?'Turno 1 · 22h–11h':'Turno 2 · 10h–22h';
+  document.getElementById('tb').textContent=isT1?'T1':'T2';
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  document.getElementById('b-sz').textContent=DB.ga('aloc').filter(r=>r.data===hoje).length+' hoje';
+  // PS removido do app
+  document.getElementById('b-exp').textContent=(DB.ga('exp-hus').length||EXP_HUS.length)+' HUs';
+}
+
+// ── ALOCAR ──
+let A_PKG_ID = '';     // ID do pacote atual
+let A_GAIOLA = '';     // Gaiola selecionada
+
+// Zonas para o grid
+const ALOCAR_ZONAS=[
+  {key:'dev',label:'DEVOLUÇÃO',cor:'#E65100',ids:['D1','D2','D3','D4','D5']},
+  {key:'fin',label:'FINALIZADOR',cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5']},
+  {key:'mis',label:'MISSORT',cor:'#C62828',ids:['M1','M2','M3','M4','M5']},
+  {key:'sid',label:'SEM ID',cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10']},
+  {key:'blk',label:'BULKY',cor:'#1565C0',ids:['B1','B2','B3']},
+  {key:'ps', label:'PS',cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4']},
+];
+
+function aBuildGrid(){
+  const grid = document.getElementById('a-zonas-grid');
+  if(!grid) return;
+  grid.innerHTML = ALOCAR_ZONAS.map(z=>`
+    <div style="border-radius:9px;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+      <div style="background:${z.cor};padding:6px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer"
+           onclick="aToggleZona('${z.key}')">
+        <span style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.5px">${z.label}</span>
+        <span style="color:rgba(255,255,255,.7);font-size:12px" id="a-arrow-${z.key}">▾</span>
+      </div>
+      <div id="a-gz-${z.key}" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:8px">
+        ${z.ids.map(id=>`
+          <button id="abtn-${id}" onclick="aSelGaiola('${id}')"
+            style="padding:9px 4px;border:2px solid transparent;border-radius:7px;font-size:12px;font-weight:900;
+                   color:#fff;background:${z.cor};cursor:pointer;transition:all .15s;
+                   opacity:.7;-webkit-tap-highlight-color:transparent">
+            ${id}
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function aToggleZona(key){
+  // All zones are always open — clicking header doesn't collapse
+  // (removed for simplicity in warehouse use)
+}
+
+function aChecarPacote(){
+  const val = document.getElementById('a-id').value.trim();
+  const status = document.getElementById('a-pkg-status');
+  if(!status) return;
+  if(val.length > 5){
+    status.style.display = 'block';
+    status.style.background = '#E8F5E9';
+    status.style.color = '#2E7D32';
+    status.style.border = '1px solid #2E7D32';
+    status.textContent = '✅ Pacote pronto — escolha a gaiola abaixo';
+    document.getElementById('a-gz-panel').style.display = 'block';
+  } else {
+    status.style.display = 'none';
+    document.getElementById('a-gz-panel').style.display = 'none';
+  }
+}
+
+function aProcessarScan(){
+  const raw = document.getElementById('a-id').value.trim();
+  const id = raw.replace(/[^a-zA-Z0-9\-]/g,'').toUpperCase();
+  if(!id || id.length < 5){ toast('⚠️ Scan o pacote primeiro'); return; }
+  document.getElementById('a-id').value = id;
+  A_PKG_ID = id;
+  // Mostra painel gaiolas
+  const status = document.getElementById('a-pkg-status');
+  status.style.display = 'block';
+  status.style.background = '#E8F5E9';
+  status.style.color = '#2E7D32';
+  status.style.border = '1px solid #2E7D32';
+  status.textContent = '✅ '+id+' — escolha a gaiola';
+  document.getElementById('a-gz-panel').style.display = 'block';
+}
+
+function aSelGaiola(gz){
+  if(!gz || gz.length < 1) return;
+  A_GAIOLA = gz.toUpperCase();
+  document.getElementById('a-gz').value = A_GAIOLA;
+  // Highlight btn
+  document.querySelectorAll('[id^="abtn-"]').forEach(b=>{
+    b.style.opacity = '0.7';
+    b.style.border = '2px solid transparent';
+    b.style.transform = 'scale(1)';
+  });
+  const btn = document.getElementById('abtn-'+A_GAIOLA);
+  if(btn){
+    btn.style.opacity = '1';
+    btn.style.border = '2px solid #FFE600';
+    btn.style.transform = 'scale(1.08)';
+    btn.style.boxShadow = '0 2px 8px rgba(0,0,0,.3)';
+  }
+  // Label
+  const lbl = document.getElementById('a-sel-label');
+  if(lbl) lbl.textContent = '→ '+A_GAIOLA;
+  // Enable alocar btn
+  const bAlocar = document.getElementById('a-btn-alocar');
+  if(bAlocar){ bAlocar.style.opacity='1'; bAlocar.style.pointerEvents='auto'; }
+  // Update label
+  const status = document.getElementById('a-pkg-status');
+  const id = document.getElementById('a-id').value.trim().replace(/[^a-zA-Z0-9\-]/g,'').toUpperCase();
+  if(status && id){ status.textContent = '✅ '+id+' → '+A_GAIOLA+' — clique Alocar'; }
+}
+
+function alocar(){
+  const id = document.getElementById('a-id').value.trim().replace(/[^a-zA-Z0-9\-]/g,'').toUpperCase();
+  const gz = A_GAIOLA || document.getElementById('a-gz').value.trim().toUpperCase();
+  if(!id){ toast('⚠️ Scan o pacote primeiro'); return; }
+  if(!gz){ toast('⚠️ Escolha a gaiola'); return; }
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  DB.push('aloc',{id,gaiola:gz,cor:COR(gz),operador:U.nome,data:hoje,hora});
+  sbInsert('alocacoes',{pacote_id:id,gaiola:gz,cor:COR(gz),operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
+  // Reset
+  document.getElementById('a-id').value = '';
+  document.getElementById('a-gz').value = '';
+  A_PKG_ID = ''; A_GAIOLA = '';
+  document.getElementById('a-gz-panel').style.display = 'none';
+  const status = document.getElementById('a-pkg-status');
+  if(status) status.style.display = 'none';
+  // Reset botões
+  document.querySelectorAll('[id^="abtn-"]').forEach(b=>{
+    b.style.opacity='0.7'; b.style.border='2px solid transparent'; b.style.transform='scale(1)'; b.style.boxShadow='';
+  });
+  const lbl = document.getElementById('a-sel-label');
+  if(lbl) lbl.textContent = '—';
+  const bAlocar = document.getElementById('a-btn-alocar');
+  if(bAlocar){ bAlocar.style.opacity='.4'; bAlocar.style.pointerEvents='none'; }
+  document.getElementById('a-id').focus();
+  toast('✅ '+id+' → '+gz);
+  rAlocar();
+}
+
+function rAlocar(){
+  if(document.getElementById('a-zonas-grid') && !document.getElementById('abtn-D1'))
+    aBuildGrid();
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const regs=DB.ga('aloc').filter(r=>r.operador===U.nome&&r.data===hoje);
+  const l=document.getElementById('a-lista');
+  if(!regs.length){l.innerHTML='<div class="empty"><div class="ic">📋</div>Nenhuma alocação ainda</div>';return}
+  l.innerHTML=regs.map(r=>`<div class="reg"><div><div class="rc">${r.id}</div><div class="ri">${r.hora}</div></div><div class="gbadge" style="background:${r.cor}">${r.gaiola}</div></div>`).join('');
+}
+
+// ── PAINEL ──
+function rPainel(){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const regs=DB.ga('aloc').filter(r=>r.data===hoje);
+  const usadas=new Set(regs.map(r=>r.gaiola));
+  document.getElementById('p-resumo').textContent=`${usadas.size} gaiola${usadas.size!==1?'s':''} · ${regs.length} pct${regs.length!==1?'s':''}`;
+  gerarSVG('mapa-svg',regs,new Set(),false);
+  const l=document.getElementById('p-lista');
+  if(!regs.length){l.innerHTML='<div class="empty"><div class="ic">📊</div>Nenhuma alocação</div>';return}
+  l.innerHTML=regs.slice(0,25).map(r=>`<div class="reg"><div><div class="rc">${r.id}</div><div class="ri">${r.operador} · ${r.hora}</div></div><div class="gbadge" style="background:${r.cor}">${r.gaiola}</div></div>`).join('');
+}
+
+// ── DEVOLUÇÃO ──
+let DEVOL_SEL=new Set();
+function rDevol(){
+  DEVOL_SEL=new Set();
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const regs=DB.ga('aloc').filter(r=>r.data===hoje);
+  const processadas=new Set(DB.ga('devol').filter(r=>r.data===hoje).flatMap(r=>r.gaiolas));
+  gerarSVG('devol-svg',regs,processadas,true);
+  document.getElementById('btn-montar').disabled=true;
+  const hist=DB.ga('devol');
+  const hEl=document.getElementById('devol-hist');
+  if(!hist.length){hEl.innerHTML='<div class="empty"><div class="ic">📤</div>Nenhuma montagem</div>';return}
+  hEl.innerHTML=hist.map(d=>`<div class="reg"><div><div class="rc">${d.gaiolas.join(', ')}</div><div class="ri">${d.operador} · ${d.hora}</div></div><span class="gbadge" style="background:var(--green)">✅</span></div>`).join('');
+}
+function toggleDevol(id,el){
+  const g=el.closest?el.closest('g'):el;if(!g)return;
+  const r=g.querySelector('rect');
+  if(DEVOL_SEL.has(id)){DEVOL_SEL.delete(id);g.style.opacity='0.18';if(r){r.style.stroke='rgba(255,255,255,.15)';r.style.strokeWidth='1'}}
+  else{DEVOL_SEL.add(id);g.style.opacity='1';if(r){r.style.stroke='#FFE600';r.style.strokeWidth='2.5'}}
+  document.getElementById('btn-montar').disabled=DEVOL_SEL.size===0;
+}
+function montarDevol(){
+  if(!DEVOL_SEL.size)return;
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const gaiolas=[...DEVOL_SEL];
+  // Remove as alocações das gaiolas selecionadas (reseta)
+  const alocs=DB.ga('aloc');
+  const restantes=alocs.filter(r=>!(r.data===hoje&&gaiolas.includes(r.gaiola)));
+  DB.s('aloc',restantes);
+  // Registra a devolução
+  DB.push('devol',{gaiolas,operador:U.nome,data:hoje,hora});
+  sbInsert('devol',{gaiolas:JSON.stringify(gaiolas),operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
+  toast('✅ Gaiolas '+gaiolas.join(', ')+' montadas e resetadas!');
+  rDevol();
+}
+
+// ── PS ──
+function abrirPS(){
+  const id=document.getElementById('ps-id').value.trim();
+  const desc=document.getElementById('ps-desc').value.trim();
+  if(!id){toast('⚠️ Scan o pacote');return}
+  if(!desc){toast('⚠️ Descreva o dano');return}
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  DB.push('ps',{id:Date.now(),cod:id,desc,operador:U.nome,data:hoje,hora,status:'aberto'});
+  document.getElementById('ps-id').value='';document.getElementById('ps-desc').value='';
+  toast('✅ PS registrado!');rPS();
+}
+function rPS(){
+  const regs=DB.ga('ps');const l=document.getElementById('ps-lista');
+  if(!regs.length){l.innerHTML='<div class="empty"><div class="ic">⚠️</div>Nenhum PS</div>';return}
+  l.innerHTML=regs.map(r=>`<div class="reg" style="flex-direction:column;align-items:flex-start;gap:4px">
+    <div style="display:flex;justify-content:space-between;width:100%"><span class="rc">${r.cod}</span><span style="font-size:10px;font-weight:700;background:#FFF3E0;color:var(--ps);padding:2px 7px;border-radius:6px">⏳ Aberto</span></div>
+    <div style="font-size:11px;color:#666">${r.desc}</div>
+    <div style="font-size:10px;color:#AAA">${r.operador} · ${r.hora}</div>
+  </div>`).join('');
+}
+
+// ── DESCARTE ──
+function rDescarte(){
+  const gays=DB.ga('gaylords');const ativo=gays.length?gays[0].id:'GAY-000001';
+  document.getElementById('d-gn').textContent=ativo;
+  const itens=DB.ga('descartes').filter(d=>d.gaylord===ativo);
+  document.getElementById('d-qt').textContent=`${itens.length} iten${itens.length!==1?'s':''}`;
+  const l=document.getElementById('d-lista');
+  if(!itens.length){l.innerHTML='<div class="empty"><div class="ic">📥</div>Nenhuma embalagem registrada</div>';return}
+  l.innerHTML=itens.map(r=>`<div class="reg"><div><div class="rc">${r.cod}</div><div class="ri">${r.operador} · ${r.hora}</div></div><span style="font-size:10px;font-weight:700;color:#37474F">${r.gaylord}</span></div>`).join('');
+}
+function descarte(){
+  const cod=document.getElementById('d-id').value.trim();if(!cod){toast('⚠️ Scan o item');return}
+  const gays=DB.ga('gaylords');const gay=gays.length?gays[0].id:'GAY-000001';
+  const hoje=new Date().toLocaleDateString('pt-BR');const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  DB.push('descartes',{cod,gaylord:gay,operador:U.nome,data:hoje,hora});
+  sbInsert('embalagens',{pacote_id:cod,gaylord_id:gay,operador:U.nome,operador_lw:U.lw||'',data:hoje,hora});
+  document.getElementById('d-id').value='';toast(`✅ ${cod} → ${gay}`);rDescarte();
+}
+
+// ── IDENTIFICAÇÕES ──
+function rIds(){
+  const ID_ZONAS=[
+    {nome:'Devolução',cor:'#E65100',ids:['D1','D2','D3','D4','D5'],sla:'SLA: 24 a 48h'},
+    {nome:'Finalizador',cor:'#7B1FA2',ids:['F1','F2','F3','F4','F5'],sla:'HU Genérico'},
+    {nome:'Missort',cor:'#C62828',ids:['M1','M2','M3','M4','M5'],sla:'SLA: 24 a 48h'},
+    {nome:'Sem ID',cor:'#6A1B9A',ids:['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10'],sla:'SLA: 3 a 5 dias'},
+    {nome:'Bulky',cor:'#1565C0',ids:['B1','B2','B3'],sla:'HU → Doca 01'},
+    {nome:'PS',cor:'#FF8F00',ids:['PS1','PS2','PS3','PS4'],sla:'SLA: 24h URGENTE'},
+  ];
+  document.getElementById('ids-lista').innerHTML=ID_ZONAS.map(z=>`
+    <div style="background:#fff;border-radius:9px;overflow:hidden;margin-bottom:8px;display:flex;align-items:stretch;box-shadow:0 1px 4px rgba(0,0,0,.05)">
+      <div style="width:7px;background:${z.cor};flex-shrink:0"></div>
+      <div style="padding:10px 12px;flex:1">
+        <div style="font-size:12px;font-weight:700;color:var(--navy)">${z.nome}</div>
+        <div style="font-size:10px;color:var(--gray);margin-top:2px">${z.ids.join(' · ')}</div>
+        <div style="font-size:10px;font-weight:700;color:${z.cor};margin-top:3px">${z.sla}</div>
+      </div>
+      <div style="padding:10px;display:flex;align-items:center">
+        <button style="background:var(--navy);color:var(--yellow);border:none;padding:5px 10px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer" onclick="toast('🖨️ Imprimindo ${z.nome}...')">🖨️</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── GAYLORD ──
+function proxGay(){const g=DB.ga('gaylords');return`GAY-${String((g.length?parseInt(g[0].id.replace('GAY-','')):0)+1).padStart(6,'0')}`}
+function gerarGay(){
+  const id=proxGay();const hoje=new Date().toLocaleDateString('pt-BR');
+  DB.push('gaylords',{id,data:hoje,operador:U.nome});
+  sbInsert('gaylords',{gay_id:id,data:hoje,operador:U.nome,operador_lw:U?U.lw||'':''});
+  toast('✅ '+id+' gerado!');rGay();
+}
+function rGay(){
+  const g=DB.ga('gaylords');
+  const at=g.length?g[0]:{id:proxGay(),data:new Date().toLocaleDateString('pt-BR'),operador:U?.nome||'—'};
+  document.getElementById('g-id').textContent=at.id;
+  document.getElementById('g-dt').textContent=`📅 ${at.data}`;
+  document.getElementById('g-op').textContent=`👤 ${at.operador}`;
+  const itens=DB.ga('descartes').filter(d=>d.gaylord===at.id).length;
+  document.getElementById('g-qt').textContent=`📦 ${itens} iten${itens!==1?'s':''}`;
+  const qr=document.getElementById('g-qr');qr.innerHTML='';
+  try{new QRCode(qr,{text:at.id,width:56,height:56,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})}catch(e){}
+  const l=document.getElementById('g-lista');
+  if(!g.length){l.innerHTML='<div class="empty"><div class="ic">🏷️</div>Nenhum gaylord</div>';return}
+  l.innerHTML=g.map(gi=>`<div class="reg"><div><div class="rc">${gi.id}</div><div class="ri">${gi.operador} · ${gi.data}</div></div><span style="font-size:10px;font-weight:700;color:#37474F">${DB.ga('descartes').filter(d=>d.gaylord===gi.id).length} itens</span></div>`).join('');
+}
+
+// ── SEM ID ──
+function proxSID(){const s=DB.ga('sids');return`SID-${String((s.length?parseInt(s[0].id.replace('SID-','')):0)+1).padStart(6,'0')}`}
+function gerarSID(){
+  const id=proxSID();const hoje=new Date().toLocaleDateString('pt-BR');
+  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  DB.push('sids',{id,data:hoje,hora,operador:U.nome,verificacoes:0,ultima_verif:null});
+  sbInsert('sids',{sid_id:id,data:hoje,hora,operador:U.nome,operador_lw:U.lw||'',verificacoes:0});
+  toast('✅ '+id+' gerado!');rSID();
+}
+function verificarSID(){
+  const inp=document.getElementById('sv-inp').value.trim().toUpperCase();
+  if(!inp){toast('⚠️ Informe o ID SID');return}
+  const sids=DB.ga('sids');const idx=sids.findIndex(s=>s.id===inp);
+  if(idx<0){toast('❌ SID não encontrado');return}
+  sids[idx].verificacoes=(sids[idx].verificacoes||0)+1;
+  sids[idx].ultima_verif=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  DB.s('sids',sids);document.getElementById('sv-inp').value='';
+  toast(`🔍 ${inp} — ${sids[idx].verificacoes}ª verificação`);mostrarSID(sids[idx]);
+}
+function mostrarSID(s){
+  document.getElementById('s-id').textContent=s.id;
+  document.getElementById('s-dt').textContent=`📅 Gerado: ${s.data} às ${s.hora}`;
+  document.getElementById('s-vf').textContent=`🔍 ${s.verificacoes} verificaç${s.verificacoes===1?'ão':'ões'}`;
+  document.getElementById('s-uv').textContent=`🕐 Última: ${s.ultima_verif||'—'}`;
+  const vb=document.getElementById('s-vb');
+  vb.textContent=s.verificacoes>0?`✅ Verificado ${s.verificacoes}x`:'Aguardando verificação';
+  vb.style.background=s.verificacoes>0?'#E8F5E9':'#FFF3E0';
+  vb.style.color=s.verificacoes>0?'#2E7D32':'var(--ps)';
+  const qr=document.getElementById('s-qr');qr.innerHTML='';
+  try{new QRCode(qr,{text:s.id,width:56,height:56,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})}catch(e){}
+}
+function rSID(){
+  const sids=DB.ga('sids');
+  if(sids.length)mostrarSID(sids[0]);
+  const l=document.getElementById('s-lista');
+  if(!sids.length){l.innerHTML='<div class="empty"><div class="ic">🔍</div>Nenhuma etiqueta</div>';return}
+  l.innerHTML=sids.map(s=>`<div class="reg"><div><div class="rc">${s.id}</div><div class="ri">📅 ${s.data} · 🔍 ${s.verificacoes}x${s.ultima_verif?' · 🕐 '+s.ultima_verif:''}</div></div><span style="font-size:10px;font-weight:700;background:#EDE7F6;color:var(--sid);padding:2px 8px;border-radius:6px">${s.verificacoes}x</span></div>`).join('');
+}
+
+// ══════════════════════════════════
+// ── EXPEDIÇÃO HU (app completo) ──
+// ══════════════════════════════════
+let EXP_PKGS=[],EXP_PID=0,EXP_HUS=DB.ga('exp-hus')||[],EXP_EMAILS=[];
+let EXP_MOTIVOS=[
+  {label:'Fora da área de cobertura',color:'blue'},
+  {label:'Endereço não localizado',color:'blue'},
+  {label:'Destinatário ausente',color:'amber'},
+  {label:'Recusado pelo destinatário',color:'amber'},
+  {label:'Tentativa sem sucesso',color:'amber'},
+  {label:'CEP incorreto / incompleto',color:'amber'},
+  {label:'Avariado',color:'red'},
+  {label:'Missort',color:'red'},
+  {label:'Devolução solicitada',color:'teal'},
+  {label:'Outro',color:'gray'}
+];
+const DOT={blue:'d-blue',amber:'d-amber',red:'d-red',teal:'d-teal',gray:'d-gray'};
+const getMC=label=>{const m=EXP_MOTIVOS.find(x=>x.label===label);return m?DOT[m.color]:'d-gray'};
+
+function expInit(){
+  document.getElementById('e-data').value=new Date().toISOString().split('T')[0];
+  expBuildOpts();expRenderTable();expTestSB();
+}
+function expBuildOpts(){
+  const opts='<option value="">— sem motivo —</option>'+EXP_MOTIVOS.map(m=>`<option value="${m.label}">${m.label}</option>`).join('');
+  ['e-motpadrao'].forEach(id=>{const s=document.getElementById(id);if(s){const c=s.value;s.innerHTML=opts;s.value=c}});
+  expRenderMotiTags();
+}
+function expRenderMotiTags(){
+  const el=document.getElementById('e-moti-tags');if(!el)return;
+  el.innerHTML=EXP_MOTIVOS.map((m,i)=>`<span class="m-tag"><span class="mot-dot ${DOT[m.color]}"></span>${m.label}<button onclick="expRemoveMot(${i})">×</button></span>`).join('');
+}
+function expRemoveMot(i){EXP_MOTIVOS.splice(i,1);expBuildOpts()}
+function expAddMotivos(){
+  const lines=document.getElementById('e-new-mot').value.split(/[\n\r]+/).map(s=>s.trim()).filter(Boolean);
+  lines.forEach(label=>{if(!EXP_MOTIVOS.find(m=>m.label===label))EXP_MOTIVOS.push({label,color:'gray'})});
+  document.getElementById('e-new-mot').value='';expBuildOpts();
+}
+function parseIdsExp(raw){return raw.split(/[\n\r,;|\t\s]+/).map(s=>s.trim().replace(/[^a-zA-Z0-9\-]/g,'')).filter(s=>s.length>4)}
+function expScan(){
+  const inp=document.getElementById('e-scan'),raw=inp.value.trim();if(!raw)return;
+  const ids=parseIdsExp(raw);
+  if(ids.length>1)expBulkAdd(ids);else expSingleAdd(raw.replace(/[^a-zA-Z0-9\-]/g,''));
+  inp.value='';inp.focus();
+}
+function expSingleAdd(id){
+  if(EXP_PKGS.find(p=>p.shipmentId===id)){expFlash('dup',`Duplicado: ${id}`);expFlashScan('dup')}
+  else{expAddPkg(id);expFlash('ok',`✓ ${id} adicionado`);expFlashScan('ok')}
+}
+function expBulkAdd(ids){let a=0,d=0;ids.forEach(id=>{if(EXP_PKGS.find(p=>p.shipmentId===id))d++;else{expAddPkg(id);a++}});expFlash(d&&!a?'dup':'ok',`✓ ${a} importados${d?` · ${d} duplicados`:''}`)}
+function expAddPkg(id){
+  EXP_PID++;const mot=document.getElementById('e-motpadrao').value||'';
+  EXP_PKGS.push({id:EXP_PID,shipmentId:id,motivo:mot});expRenderTable();
+}
+function expBatch(){
+  const ids=parseIdsExp(document.getElementById('e-batch').value);
+  if(!ids.length){expFlash('err','Nenhum ID válido');return}
+  expBulkAdd(ids);document.getElementById('e-batch').value='';
+}
+function expAplicarPadrao(){
+  const m=document.getElementById('e-motpadrao').value;
+  EXP_PKGS.forEach(p=>{if(m&&!p.motivo)p.motivo=m});expRenderTable();expFlash('ok','Padrão aplicado');
+}
+function expDelPkg(id){EXP_PKGS=EXP_PKGS.filter(p=>p.id!==id);expRenderTable()}
+function expClearAll(){if(!EXP_PKGS.length)return;if(confirm(`Remover todos os ${EXP_PKGS.length} pacotes?`)){EXP_PKGS=[];expRenderTable()}}
+function expSetMot(id,val){const p=EXP_PKGS.find(x=>x.id===id);if(p)p.motivo=val}
+function expRenderTable(){
+  document.getElementById('e-qt').textContent=EXP_PKGS.length;
+  document.getElementById('e-pkgct').textContent=EXP_PKGS.length;
+  const tb=document.getElementById('e-tbody');
+  if(!EXP_PKGS.length){tb.innerHTML='<tr><td colspan="4"><div class="empty"><div class="ic">🚚</div>Scan os pacotes finalizadores</div></td></tr>';return}
+  const opts=EXP_MOTIVOS.map(m=>`<option value="${m.label}">${m.label}</option>`).join('');
+  tb.innerHTML=EXP_PKGS.map((p,i)=>`<tr>
+    <td style="color:var(--gray);font-size:10px;width:22px">${i+1}</td>
+    <td class="td-mono">${p.shipmentId}</td>
+    <td><select class="td-sel" onchange="expSetMot(${p.id},this.value)"><option value="">— motivo —</option>${opts}</select></td>
+    <td><button class="del-btn" onclick="expDelPkg(${p.id})">×</button></td>
+  </tr>`).join('');
+  EXP_PKGS.forEach(p=>{const s=document.querySelector(`#e-tbody tr:nth-child(${EXP_PKGS.indexOf(p)+1}) select`);if(s)s.value=p.motivo||''});
+}
+let expFbT;
+function expFlash(type,msg){
+  const b=document.getElementById('e-fb');b.textContent=msg;b.className=`exp-fb ${type}`;
+  clearTimeout(expFbT);expFbT=setTimeout(()=>{b.style.display='none';b.className='exp-fb'},3000);
+}
+function expFlashScan(cls){const i=document.getElementById('e-scan');i.classList.add(cls);setTimeout(()=>i.classList.remove(cls),600)}
+function expGetH(){return{numHU:document.getElementById('e-num').value||'HU_001',dest:document.getElementById('e-dest').value||'—',orig:'SMG6 - Uberlândia',dataEnvio:document.getElementById('e-data').value||null,lo:document.getElementById('e-lacre').value,sc:parseInt(document.getElementById('e-sacas').value)||0,pl:parseInt(document.getElementById('e-pallets').value)||0,op:U?.nome||'SMG6'}}
+function expSaveSt(type,msg){const e=document.getElementById('e-savest');e.style.display='block';const col=type==='ok'?'#E8F5E9,#2E7D32,#99DDB8':type==='err'?'#FEECEC,#C62828,#F5AAAA':'#FEF6E7,#F5A623,#FBDFA0';const [bg,co,bo]=col.split(',');e.style.cssText=`display:block;background:${bg};color:${co};border:1px solid ${bo};padding:6px 10px;border-radius:6px;font-size:11px`;e.textContent=msg}
+async function expSB(){
+  if(!EXP_PKGS.length){toast('⚠️ Nenhum pacote');return}
+  const h=expGetH();
+  const records=EXP_PKGS.map(p=>({num_hu:h.numHU,destino_hu:h.dest,origem:h.orig,data_envio:h.dataEnvio||undefined,lacre_origen:h.lo,sacas:h.sc,pallets:h.pl,shipment_id:p.shipmentId,motivo:p.motivo||null,operador:h.op,status:'registrado'}));
+  expSaveSt('warn',`Salvando ${records.length} registros...`);
+  document.getElementById('e-dbdot').className='db-dot spin';document.getElementById('e-dblbl').textContent='Salvando...';
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/expedicao_shipments`,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`,'Prefer':'return=minimal'},body:JSON.stringify(records)});
+    if(r.ok||r.status===201){expSaveSt('ok',`✅ ${records.length} registros salvos no Supabase`);document.getElementById('e-dbdot').className='db-dot ok';document.getElementById('e-dblbl').textContent='Salvo';return true}
+    else{const t=await r.text();expSaveSt('err',`Erro ${r.status}`);document.getElementById('e-dbdot').className='db-dot err';return false}
+  }catch(e){expSaveSt('err','Falha de rede');document.getElementById('e-dbdot').className='db-dot err';return false}
+}
+async function expTestSB(){
+  try{const r=await fetch(`${SB_URL}/rest/v1/expedicao_shipments?limit=1`,{headers:{'apikey':SB_KEY,'Authorization':`Bearer ${SB_KEY}`}});
+  if(r.ok){document.getElementById('e-dbdot').className='db-dot ok';document.getElementById('e-dblbl').textContent='Conectado'}}catch(e){}
+}
+function expXLSX(){
+  if(!EXP_PKGS.length){toast('⚠️ Nenhum pacote');return}
+  if(typeof XLSX==='undefined'){toast('Carregando biblioteca...');return}
+  const h=expGetH(),G='B4D84A',BK='000000';
+  const gL=(val,sz,al)=>({v:val,t:'s',s:{fill:{patternType:'solid',fgColor:{rgb:G}},font:{name:'Arial',sz:sz||11,bold:true,color:{rgb:BK}},alignment:{horizontal:al||'left',vertical:'center'}}});
+  const vC=val=>({v:val,t:'s',s:{font:{name:'Arial',sz:11,color:{rgb:BK}},alignment:{horizontal:'right',vertical:'center'}}});
+  const nC=val=>({v:val,t:'n',s:{font:{name:'Arial',sz:14,bold:true,color:{rgb:BK}},alignment:{horizontal:'center',vertical:'center'}}});
+  const dC=val=>({v:val,t:'s',s:{font:{name:'Arial',sz:11,color:{rgb:BK}},alignment:{horizontal:'center'}}});
+  const wb=XLSX.utils.book_new(),ws={};
+  ws['B2']={v:`SVC       ${h.orig}`,t:'s',s:{fill:{patternType:'solid',fgColor:{rgb:G}},font:{name:'Arial',sz:24,bold:true,color:{rgb:BK}},alignment:{horizontal:'center',vertical:'center'}}};
+  ws['B7']=gL('DESTINO (XD/FULL):');ws['D7']={v:h.dest,t:'s',s:{font:{name:'Arial',sz:14,bold:true,color:{rgb:BK}},alignment:{horizontal:'right',vertical:'center'}}};
+  ws['J7']=gL('TOTAL DE PEDIDOS',10,'center');ws['K7']=gL('TOTAL DE SACAS',10,'center');ws['L7']=gL('TOTAL DE PALLETS',10,'center');
+  ws['J8']=nC(EXP_PKGS.length);ws['K8']=nC(h.sc);ws['L8']=nC(h.pl);
+  ws['B9']=gL('DATA DO ENVIO:');ws['D9']=vC(h.dataEnvio?new Date(h.dataEnvio+'T12:00').toLocaleDateString('pt-BR'):'');
+  ws['B10']=gL('LACRE ORIGEN (SVC):');ws['D10']=vC(h.lo);
+  ws['B12']=gL('Nº HU:');ws['D12']=vC(h.numHU);
+  ws['B14']=gL('Nº SHIPMENT',11,'center');ws['D14']=gL('DESTINO (XD/FULL)',11,'center');ws['F14']=gL('MOTIVOS',11,'center');ws['H14']=gL('OBSERVACIONES',11,'center');
+  EXP_PKGS.forEach((p,i)=>{const r=15+i;ws[`B${r}`]=dC(p.shipmentId);ws[`D${r}`]=dC(h.dest);ws[`F${r}`]=dC(p.motivo);ws[`H${r}`]=dC('')});
+  ws['!ref']=`A1:N${Math.max(26,15+EXP_PKGS.length+1)}`;
+  ws['!merges']=[{s:{r:1,c:1},e:{r:4,c:12}},{s:{r:6,c:1},e:{r:7,c:2}},{s:{r:6,c:3},e:{r:7,c:4}},{s:{r:7,c:9},e:{r:11,c:9}},{s:{r:7,c:10},e:{r:11,c:10}},{s:{r:7,c:11},e:{r:11,c:11}}];
+  ws['!cols']=[{wch:12},{wch:21},{wch:12},{wch:21},{wch:12},{wch:21},{wch:10},{wch:21},{wch:10},{wch:18},{wch:16},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws,'Hoja 1');
+  XLSX.writeFile(wb,`romaneio_${h.numHU.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`);
+  toast('✅ XLSX gerado!');
+}
+function expCSV(){
+  if(!EXP_PKGS.length){toast('⚠️ Nenhum pacote');return}
+  const h=expGetH(),dt=h.dataEnvio?new Date(h.dataEnvio+'T12:00').toLocaleDateString('pt-BR'):'';
+  const BOM='\uFEFF',hdr='Nº SHIPMENT;DESTINO;MOTIVOS;Nº HU;DATA DO ENVIO\r\n';
+  const rows=EXP_PKGS.map(p=>[p.shipmentId,h.dest,p.motivo,h.numHU,dt].map(x=>`"${(x||'').replace(/"/g,'""')}"`).join(';')+'\r\n').join('');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([BOM+hdr+rows],{type:'text/csv;charset=utf-8'}));
+  a.download=`shipments_${h.numHU.replace(/[^a-zA-Z0-9]/g,'_')}.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},200);
+  toast('✅ CSV gerado!');
+}
+function expAddEmail(){const i=document.getElementById('e-email'),v=i.value.trim();if(v&&v.includes('@')&&!EXP_EMAILS.includes(v)){EXP_EMAILS.push(v);i.value='';expRenderEmails()}}
+function expRenderEmails(){document.getElementById('e-etags').innerHTML=EXP_EMAILS.map(e=>`<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#EBF0FF;border:1px solid #b0c4ff;border-radius:20px;font-size:11px;color:var(--blue)">✉️ ${e}<button onclick="EXP_EMAILS=EXP_EMAILS.filter(x=>x!=='${e}');expRenderEmails()" style="background:none;border:none;cursor:pointer;color:var(--blue);margin-left:2px">×</button></span>`).join('')}
+function expEmail(){
+  if(!EXP_EMAILS.length){toast('⚠️ Adicione um email');return}
+  if(!EXP_PKGS.length){toast('⚠️ Nenhum pacote');return}
+  const h=expGetH();const dt=h.dataEnvio?new Date(h.dataEnvio+'T12:00').toLocaleDateString('pt-BR'):'—';
+  const subj=`[SMG6 → ${h.dest.split(' ')[0]}] Finalizador — ${h.numHU} | ${dt}`;
+  const body=`Prezados,\n\nEncaminhamos pacotes Finalizador para geração da Etiqueta 2.0.\n\nHU: ${h.numHU}\nData: ${dt}\nOrigem: ${h.orig}\nDestino: ${h.dest}\nTotal: ${EXP_PKGS.length} pacotes\n\n${EXP_PKGS.map((p,i)=>`${String(i+1).padStart(2,'0')}. ${p.shipmentId} | ${p.motivo||'—'}`).join('\n')}\n\nAtenciosamente,\nEquipe SMG6 — Uberlândia`;
+  window.open('https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(EXP_EMAILS.join(','))+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
+}
+async function expTudo(){if(!EXP_PKGS.length){toast('⚠️ Nenhum pacote');return}await expSB();expXLSX();setTimeout(expCSV,400);setTimeout(expEmail,800)}
+function rExp(){expRenderTable();expRenderHUs()}
+function expRenderHUs(){
+  const l=document.getElementById('e-hus');
+  if(!EXP_HUS.length){l.innerHTML='<div class="empty"><div class="ic">📦</div>Nenhum HU expedido</div>';return}
+  l.innerHTML=EXP_HUS.map(h=>`<div class="reg"><div><div class="rc">${h.id}</div><div class="ri">${h.operador} · ${h.data} · ${h.qt} pcts</div></div><span class="gbadge" style="background:var(--green)">✅</span></div>`).join('');
+}
+
+
+// ══════════════════════════════════
+// ── GERADOR ETIQUETAS ZEBRA ──
+// ══════════════════════════════════
+let etiTipo='semid';
+const etiHoje=()=>new Date().toLocaleDateString('pt-BR');
+const ev=id=>(document.getElementById(id)||{}).value||'';
+const evi=id=>parseInt((document.getElementById(id)||{}).value)||1;
+
+function etiSetT(t){
+  etiTipo=t;
+  ['semid','gaylord','devos'].forEach(x=>{
+    const f=document.getElementById('ef-'+x);const b=document.getElementById('et-'+x);
+    if(f)f.style.display=x===t?'block':'none';
+    if(b){b.style.background=x===t?'var(--navy)':'#fff';b.style.color=x===t?'var(--yellow)':'var(--gray)';}
+  });
+}
+function etiChg(id,d){const e=document.getElementById(id);if(e)e.value=Math.max(1,Math.min(100,(parseInt(e.value)||1)+d));}
+function etiUpdS(){const op=ev('es-op'),n=ev('es-num')||1;const el=document.getElementById('es-prev');if(el)el.textContent=`SEMID_${op}_${n}`;}
+function etiUpdG(){const op=ev('eg-op'),n=ev('eg-num')||1;const el=document.getElementById('eg-prev');if(el)el.textContent=`G${n}_${op}`;}
+
+function etiAddQR(el,text,size){
+  if(!el)return;
+  try{new QRCode(el,{text:text||' ',width:size,height:size,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}catch(e){}
+  const f=()=>{const i=el.querySelector('img'),c=el.querySelector('canvas');
+    if(i)i.style.cssText='width:100%!important;height:100%!important;object-fit:contain;display:block;';
+    if(c)c.style.cssText='width:100%!important;height:100%!important;display:block;';};
+  requestAnimationFrame(f);setTimeout(f,300);
+}
+
+function etiMkCard(id,tipo){
+  const c=document.createElement('div');
+  c.style.cssText='width:110px;height:165px;background:#fff;border-radius:3px;box-shadow:0 3px 12px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0';
+  c.dataset.id=id;c.dataset.tipo=tipo;
+  const isG=tipo==='gaylord';
+  c.innerHTML=`
+    <div style="height:18px;background:#fff;border-bottom:1px solid #ddd;display:flex;align-items:center;padding:0 5px">
+      <div style="background:#FFE600;color:#111;font-weight:900;font-size:8px;padding:1px 5px;border-radius:2px">ML</div>
+    </div>
+    <div style="background:#000;color:${isG?'#FFE600':'#fff'};text-align:center;padding:3px;font-size:6px;font-weight:700;text-transform:uppercase;flex-shrink:0">
+      ${isG?'ID da GAYLORD - SALVADOS':'PACOTES SEM ID - SALVADOS'}
+    </div>
+    <div style="height:1px;background:#222;flex-shrink:0"></div>
+    <div style="background:#000;color:${isG?'#FFE600':'#fff'};text-align:center;font-size:7px;font-weight:900;padding:4px;flex-shrink:0;word-break:break-all">${id}</div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:4px;background:#fff" id="eqr_${id.replace(/[^a-z0-9]/gi,'_')}"></div>
+    <div style="height:10px;background:#f5f5f5;border-top:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:5px;color:#999;flex-shrink:0">SMG6 · ${etiHoje()}</div>
+  `;
+  return c;
+}
+
+function etiMkDevos(op,chamado,desc,pacote){
+  const c=document.createElement('div');
+  c.style.cssText='width:110px;height:165px;background:#fff;border-radius:3px;box-shadow:0 3px 12px rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0';
+  c.dataset.tipo='devos';c.dataset.op=op;c.dataset.chamado=chamado;c.dataset.desc=desc;c.dataset.pacote=pacote;
+  c.innerHTML=`
+    <div style="background:#CC0000;color:#fff;text-align:center;font-size:7px;font-weight:700;padding:6px;flex-shrink:0">DEVOS - SALVADOS</div>
+    <div style="background:#1D1D1B;color:#FFE600;text-align:center;font-size:6px;font-weight:700;padding:3px;flex-shrink:0">${op}</div>
+    <div style="flex:1;padding:4px 5px;display:flex;flex-direction:column;gap:4px;background:#fff;overflow:hidden">
+      <div><div style="font-size:4px;color:#888;text-transform:uppercase">Chamado</div><div style="font-size:7px;font-weight:700;color:#111">${chamado}</div></div>
+      <div><div style="font-size:4px;color:#888;text-transform:uppercase">Produto</div><div style="font-size:6px;font-weight:700;color:#111;max-height:24px;overflow:hidden">${desc}</div></div>
+      <div><div style="font-size:4px;color:#888;text-transform:uppercase">Pacote</div><div style="font-size:6px;font-weight:700;color:#111">${pacote}</div></div>
+    </div>
+    <div style="height:10px;background:#f5f5f5;border-top:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:5px;color:#999;flex-shrink:0">SMG6 · ${etiHoje()}</div>
+  `;
+  return c;
+}
+
+function etiGerar(){
+  const grid=document.getElementById('eti-grid');if(!grid)return;
+  grid.innerHTML='';
+  if(etiTipo==='semid'){
+    const op=ev('es-op'),start=evi('es-num'),qty=Math.min(50,Math.max(1,evi('es-qty')));
+    for(let i=0;i<qty;i++){
+      const id=`SEMID_${op}_${start+i}`;
+      const c=etiMkCard(id,'semid');grid.appendChild(c);
+      const qrEl=c.querySelector(`[id^="eqr_"]`);
+      setTimeout(()=>etiAddQR(qrEl,id,100),80*i);
+    }
+    document.getElementById('es-num').value=start+qty;etiUpdS();
+  }else if(etiTipo==='gaylord'){
+    const op=ev('eg-op'),start=evi('eg-num'),qty=Math.min(50,Math.max(1,evi('eg-qty')));
+    for(let i=0;i<qty;i++){
+      const id=`G${start+i}_${op}`;
+      const c=etiMkCard(id,'gaylord');grid.appendChild(c);
+      const qrEl=c.querySelector(`[id^="eqr_"]`);
+      setTimeout(()=>etiAddQR(qrEl,id,100),80*i);
+    }
+    document.getElementById('eg-num').value=start+qty;etiUpdG();
+  }else{
+    const op=ev('ed-op'),ch=ev('ed-chamado')||'SHP-?',desc=ev('ed-desc')||'-',pac=ev('ed-pacote')||'-';
+    const qty=Math.min(20,Math.max(1,evi('ed-qty')));
+    for(let i=0;i<qty;i++) grid.appendChild(etiMkDevos(op,ch,desc,pac));
+  }
+  toast(`✅ ${document.querySelectorAll('#eti-grid > div:not([style*="color:var"])').length || '...'} etiqueta(s) gerada(s)`);
+}
+
+// PDF ZEBRA
+const ETI_R=203/25.4;
+const ETI_W=Math.round(100*ETI_R);
+const ETI_H=Math.round(150*ETI_R);
+function etiPx(mm){return Math.round(mm*ETI_R);}
+const ETI_SCALE=150/133.9;
+const ETI_LOGO_H=etiPx(16.4*ETI_SCALE);
+const ETI_TITLE_H=etiPx(17.2*ETI_SCALE);
+const ETI_SEP_H=etiPx(0.5*ETI_SCALE);
+const ETI_ID_H=etiPx(21.7*ETI_SCALE);
+const ETI_GAP_H=etiPx(6.1*ETI_SCALE);
+const ETI_FOOT_H=etiPx(3.2*ETI_SCALE);
+const ETI_QR_H=()=>ETI_H-ETI_LOGO_H-ETI_TITLE_H-ETI_SEP_H-ETI_ID_H-ETI_GAP_H-ETI_FOOT_H;
+
+function etiQrPromise(text,size){
+  return new Promise(resolve=>{
+    const tmp=document.createElement('div');
+    tmp.style.cssText=`position:absolute;left:-9999px;top:-9999px;width:${size}px;height:${size}px;`;
+    document.body.appendChild(tmp);
+    try{new QRCode(tmp,{text,width:size,height:size,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});}catch(e){document.body.removeChild(tmp);resolve(null);return;}
+    setTimeout(()=>{
+      const el=tmp.querySelector('canvas')||tmp.querySelector('img');
+      if(!el){document.body.removeChild(tmp);resolve(null);return;}
+      const img=new Image();
+      img.onload=()=>{document.body.removeChild(tmp);resolve(img);};
+      img.onerror=()=>{document.body.removeChild(tmp);resolve(null);};
+      img.src=el.tagName==='CANVAS'?el.toDataURL():el.src;
+    },500);
+  });
+}
+
+async function etiRenderSGCard(id,tipo){
+  const isG=tipo==='gaylord';
+  const cvs=document.createElement('canvas');cvs.width=ETI_W;cvs.height=ETI_H;
+  const ctx=cvs.getContext('2d');const QH=ETI_QR_H();let y=0;
+  ctx.fillStyle='#fff';ctx.fillRect(0,y,ETI_W,ETI_LOGO_H);
+  const lw=etiPx(22),lh=etiPx(14),lx=etiPx(4),ly=y+etiPx(2);
+  ctx.fillStyle='#FFE600';ctx.beginPath();ctx.rect(lx,ly,lw,lh);ctx.fill();
+  ctx.fillStyle='#1D1D1B';ctx.font=`bold ${etiPx(8)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('ML',lx+lw/2,ly+lh/2);
+  ctx.strokeStyle='#ccc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,ETI_LOGO_H);ctx.lineTo(ETI_W,ETI_LOGO_H);ctx.stroke();
+  y+=ETI_LOGO_H;
+  ctx.fillStyle='#000';ctx.fillRect(0,y,ETI_W,ETI_TITLE_H);
+  ctx.fillStyle=isG?'#FFE600':'#fff';ctx.font=`bold ${etiPx(8)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(isG?'ID da GAYLORD - SALVADOS':'PACOTES SEM ID - SALVADOS',ETI_W/2,y+ETI_TITLE_H/2);
+  y+=ETI_TITLE_H;
+  ctx.fillStyle='#222';ctx.fillRect(0,y,ETI_W,ETI_SEP_H);y+=ETI_SEP_H;
+  ctx.fillStyle='#000';ctx.fillRect(0,y,ETI_W,ETI_ID_H);
+  ctx.fillStyle=isG?'#FFE600':'#fff';ctx.font=`900 ${etiPx(11)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(id,ETI_W/2,y+ETI_ID_H/2);y+=ETI_ID_H;
+  ctx.fillStyle='#fff';ctx.fillRect(0,y,ETI_W,ETI_GAP_H);y+=ETI_GAP_H;
+  ctx.fillStyle='#fff';ctx.fillRect(0,y,ETI_W,QH);
+  const pad=etiPx(5),qrSz=Math.min(ETI_W-pad*2,QH-pad*2);
+  const qrImg=await etiQrPromise(id,qrSz);
+  if(qrImg){const qx=(ETI_W-qrSz)/2,qy=y+(QH-qrSz)/2;ctx.drawImage(qrImg,qx,qy,qrSz,qrSz);}
+  y+=QH;
+  ctx.fillStyle='#f5f5f5';ctx.fillRect(0,y,ETI_W,ETI_FOOT_H);
+  ctx.strokeStyle='#ddd';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(ETI_W,y);ctx.stroke();
+  ctx.fillStyle='#999';ctx.font=`${etiPx(2.5)}px Courier New`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(`SMG6  ·  ${etiHoje()}`,ETI_W/2,y+ETI_FOOT_H/2);
+  return cvs;
+}
+
+function etiDrawBC39(ctx,text,x,y,w,h){
+  const chars='*'+String(text).toUpperCase()+'*';
+  const barW=w/Math.max(chars.length*9,1);let cx=x;
+  for(const ch of chars){
+    for(let b=0;b<9;b++){
+      const wide=(b%2===0&&(ch.charCodeAt(0)+b)%3===0);
+      const bw=wide?barW*2.5:barW;
+      if(b%2===0){ctx.fillStyle='#000';ctx.fillRect(Math.round(cx),y,Math.max(1,Math.round(bw)-1),h);}
+      cx+=bw;
+    }
+    cx+=barW;
+  }
+  ctx.fillStyle='#555';ctx.font=`${Math.max(6,h*0.18)}px Arial`;ctx.textAlign='center';ctx.textBaseline='bottom';
+  ctx.fillText(String(text).toUpperCase().slice(0,20),x+w/2,y+h+etiPx(3));
+}
+
+async function etiRenderDevos(op,chamado,desc,pacote){
+  const cvs=document.createElement('canvas');cvs.width=ETI_W;cvs.height=ETI_H;
+  const ctx=cvs.getContext('2d');let y=0;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,ETI_W,ETI_H);
+  const hH=ETI_LOGO_H+ETI_TITLE_H;
+  ctx.fillStyle='#CC0000';ctx.fillRect(0,y,ETI_W,hH);
+  const lw=etiPx(20),lh=etiPx(12),lx=etiPx(3),ly=y+etiPx(3);
+  ctx.fillStyle='#FFE600';ctx.beginPath();ctx.rect(lx,ly,lw,lh);ctx.fill();
+  ctx.fillStyle='#1D1D1B';ctx.font=`bold ${etiPx(7)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('ML',lx+lw/2,ly+lh/2);
+  ctx.fillStyle='#fff';ctx.font=`bold ${etiPx(8.5)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('DEVOS - SALVADOS',ETI_W/2,hH/2);y+=hH;
+  const opH=ETI_ID_H*0.6;
+  ctx.fillStyle='#1D1D1B';ctx.fillRect(0,y,ETI_W,opH);
+  ctx.fillStyle='#FFE600';ctx.font=`bold ${etiPx(8)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(op,ETI_W/2,y+opH/2);y+=opH;
+  const bodyH=ETI_H-y-etiPx(45)-ETI_FOOT_H;
+  const flds=[['Chamado',chamado],['Produto',desc],['Pacote',pacote]];
+  const fh=bodyH/flds.length;
+  flds.forEach(([lbl,val],i)=>{
+    const fy=y+i*fh;
+    if(i>0){ctx.strokeStyle='#eee';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(etiPx(4),fy);ctx.lineTo(ETI_W-etiPx(4),fy);ctx.stroke();}
+    ctx.fillStyle='#999';ctx.font=`${etiPx(2.5)}px Arial`;ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText(lbl.toUpperCase(),etiPx(5),fy+etiPx(2));
+    ctx.fillStyle='#111';ctx.font=`bold ${etiPx(6.5)}px Arial`;ctx.textBaseline='top';
+    ctx.fillText(String(val).slice(0,35),etiPx(5),fy+etiPx(6));
+  });
+  y+=bodyH;
+  const bcH=etiPx(40);
+  ctx.strokeStyle='#eee';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(ETI_W,y);ctx.stroke();
+  ctx.fillStyle='#aaa';ctx.font=`${etiPx(2.2)}px Arial`;ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText('CHAMADO',ETI_W/4,y+etiPx(1));ctx.fillText('PACOTE',3*ETI_W/4,y+etiPx(1));
+  etiDrawBC39(ctx,chamado,etiPx(4),y+etiPx(4),ETI_W/2-etiPx(8),bcH-etiPx(8));
+  ctx.strokeStyle='#eee';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ETI_W/2,y);ctx.lineTo(ETI_W/2,y+bcH);ctx.stroke();
+  etiDrawBC39(ctx,pacote,ETI_W/2+etiPx(4),y+etiPx(4),ETI_W/2-etiPx(8),bcH-etiPx(8));
+  y+=bcH;
+  ctx.fillStyle='#f5f5f5';ctx.fillRect(0,ETI_H-ETI_FOOT_H,ETI_W,ETI_FOOT_H);
+  ctx.strokeStyle='#ddd';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,ETI_H-ETI_FOOT_H);ctx.lineTo(ETI_W,ETI_H-ETI_FOOT_H);ctx.stroke();
+  ctx.fillStyle='#999';ctx.font=`${etiPx(2.5)}px Courier New`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(`SMG6  ·  ${etiHoje()}`,ETI_W/2,ETI_H-ETI_FOOT_H/2);
+  return cvs;
+}
+
+function etiGerarPDF(){
+  const cards=document.querySelectorAll('#eti-grid > div[data-tipo]');
+  if(!cards.length){toast('⚠️ Gere as etiquetas primeiro');return;}
+  
+  // Gera HTML para impressão direta — mais confiável que canvas+PDF na Zebra
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">';
+  html+='<style>';
+  html+='@page{size:100mm 150mm;margin:0}';
+  html+='*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  html+='body{background:#fff;font-family:Arial,sans-serif}';
+  html+='.label{width:100mm;height:150mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always;break-after:page}';
+  html+='.label:last-child{page-break-after:avoid;break-after:avoid}';
+  html+='.lh{background:#fff;height:11mm;display:flex;align-items:center;padding:0 3mm;border-bottom:0.5mm solid #ddd;flex-shrink:0}';
+  html+='.lml{background:#FFE600;color:#111;font-weight:900;font-size:7pt;padding:1mm 2mm;border-radius:1mm}';
+  html+='.lt{background:#000;color:#fff;text-align:center;height:12mm;display:flex;align-items:center;justify-content:center;font-size:8pt;font-weight:700;text-transform:uppercase;flex-shrink:0}';
+  html+='.lt.gay{color:#FFE600}';
+  html+='.ls{height:1mm;background:#222;flex-shrink:0}';
+  html+='.li{background:#000;color:#fff;text-align:center;height:16mm;display:flex;align-items:center;justify-content:center;font-size:11pt;font-weight:900;letter-spacing:.5pt;flex-shrink:0}';
+  html+='.li.gay{color:#FFE600}';
+  html+='.lq{flex:1;display:flex;align-items:center;justify-content:center;padding:3mm;background:#fff}';
+  html+='.lq img,.lq canvas{width:100%!important;height:100%!important;object-fit:contain}';
+  html+='.lf{height:6mm;background:#f5f5f5;border-top:0.3mm solid #ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;flex-shrink:0}';
+  // DEVOS styles
+  html+='.ldh{background:#CC0000;color:#fff;height:16mm;display:flex;align-items:center;justify-content:center;font-size:9pt;font-weight:700;flex-shrink:0}';
+  html+='.ldo{background:#1D1D1B;color:#FFE600;height:8mm;display:flex;align-items:center;justify-content:center;font-size:8pt;font-weight:700;flex-shrink:0}';
+  html+='.ldb{padding:2mm 3mm;display:flex;flex-direction:column;gap:2mm;flex:1;overflow:hidden}';
+  html+='.ldbl{font-size:5pt;color:#888;text-transform:uppercase;letter-spacing:.5pt}';
+  html+='.ldbv{font-size:9pt;font-weight:700;color:#111;word-break:break-word}';
+  html+='.lbc{display:flex;border-top:0.3mm solid #eee;height:22mm;flex-shrink:0}';
+  html+='.lbci{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1mm}';
+  html+='.lbci:first-child{border-right:0.3mm solid #eee}';
+  html+='.lbcl{font-size:4pt;color:#aaa;text-transform:uppercase;margin-bottom:1mm}';
+  html+='.lbcb{font-size:18pt;font-family:"Libre Barcode 39 Text",monospace;color:#000;line-height:1}';
+  html+='.lbcs{font-size:5pt;color:#555;text-align:center}';
+  html+='</style></head><body>';
+  
+  cards.forEach(function(card){
+    var t=card.dataset.tipo;
+    if(t==='semid'||t==='gaylord'){
+      var id=card.dataset.id;
+      var isG=t==='gaylord';
+      // Pega o QR do card existente
+      var qrEl=card.querySelector('[id^="eqr_"]');
+      var qrSrc='';
+      if(qrEl){
+        var img=qrEl.querySelector('img');
+        var cvs=qrEl.querySelector('canvas');
+        if(img)qrSrc=img.src;
+        else if(cvs)qrSrc=cvs.toDataURL();
+      }
+      html+='<div class="label">';
+      html+='<div class="lh"><div class="lml">ML</div></div>';
+      html+='<div class="lt'+(isG?' gay':'')+'>'+(isG?'ID da GAYLORD - SALVADOS':'PACOTES SEM ID - SALVADOS')+'</div>';
+      html+='<div class="ls"></div>';
+      html+='<div class="li'+(isG?' gay':'')+'">'+id+'</div>';
+      html+='<div class="lq">'+(qrSrc?'<img src="'+qrSrc+'" style="width:76mm;height:76mm">':'<div style="font-size:8pt;color:#aaa;text-align:center">QR: '+id+'</div>')+'</div>';
+      html+='<div class="lf">SMG6 · '+etiHoje()+'</div>';
+      html+='</div>';
+    } else {
+      var op=card.dataset.op;
+      var ch=card.dataset.chamado;
+      var desc=card.dataset.desc;
+      var pac=card.dataset.pacote;
+      html+='<div class="label">';
+      html+='<div class="ldh">DEVOS - SALVADOS</div>';
+      html+='<div class="ldo">'+op+'</div>';
+      html+='<div class="ldb">';
+      html+='<div><div class="ldbl">Chamado</div><div class="ldbv">'+ch+'</div></div>';
+      html+='<div><div class="ldbl">Produto</div><div class="ldbv">'+desc+'</div></div>';
+      html+='<div><div class="ldbl">Pacote</div><div class="ldbv">'+pac+'</div></div>';
+      html+='</div>';
+      html+='<div class="lbc">';
+      html+='<div class="lbci"><div class="lbcl">Chamado</div><div class="lbcb">*'+ch+'*</div><div class="lbcs">'+ch+'</div></div>';
+      html+='<div class="lbci"><div class="lbcl">Pacote</div><div class="lbcb">*'+pac.replace(/[^A-Z0-9\-\.\ ]/gi,'')+'*</div><div class="lbcs">'+pac+'</div></div>';
+      html+='</div>';
+      html+='<div class="lf">SMG6 · '+etiHoje()+'</div>';
+      html+='</div>';
+    }
+  });
+  
+  html+='</body></html>';
+  
+  var win=window.open('','_blank','width=400,height=600');
+  if(!win){toast('❌ Permita pop-ups para imprimir');return;}
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){win.print();},800);
+  toast('✅ Janela de impressão aberta!');
+}
+
+
+// ══════════════════════════════
+// ── SALVADOS (DEVOS standalone) ──
+// ══════════════════════════════
+function salvChg(d){
+  var e=document.getElementById('ed-qty2');
+  if(e)e.value=Math.max(1,Math.min(20,(parseInt(e.value)||1)+d));
+}
+
+function salvMkCard(op,ch,desc,pac){
+  var c=document.createElement('div');
+  c.style.cssText='width:130px;height:195px;background:#fff;border:2px solid #111;border-radius:4px;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0';
+  c.dataset.tipo='devos';c.dataset.op=op;c.dataset.chamado=ch;c.dataset.desc=desc;c.dataset.pacote=pac;
+  c.innerHTML=
+    '<div style="background:#CC0000;color:#fff;text-align:center;font-size:8pt;font-weight:700;padding:5px;flex-shrink:0">DEVOS - SALVADOS</div>'+
+    '<div style="background:#1D1D1B;color:#FFE600;text-align:center;font-size:7pt;font-weight:700;padding:3px;flex-shrink:0">'+op+'</div>'+
+    '<div style="flex:1;padding:4px 5px;display:flex;flex-direction:column;gap:3px;background:#fff;overflow:hidden">'+
+      '<div><div style="font-size:5pt;color:#888;text-transform:uppercase">Chamado</div><div style="font-size:8pt;font-weight:700;color:#111">'+ch+'</div></div>'+
+      '<div><div style="font-size:5pt;color:#888;text-transform:uppercase">Produto</div><div style="font-size:7pt;font-weight:700;color:#111;overflow:hidden;max-height:28px">'+desc+'</div></div>'+
+      '<div><div style="font-size:5pt;color:#888;text-transform:uppercase">Pacote</div><div style="font-size:6pt;font-weight:700;color:#111">'+pac+'</div></div>'+
+    '</div>'+
+    '<div style="font-size:5pt;color:#999;text-align:center;padding:2px;background:#f5f5f5;border-top:1px solid #ddd;flex-shrink:0">SMG6 · '+new Date().toLocaleDateString('pt-BR')+'</div>';
+  return c;
+}
+
+function salvGerar(){
+  var grid=document.getElementById('salv-grid');if(!grid)return;
+  grid.innerHTML='';
+  var op=document.getElementById('ed-op').value;
+  var ch=document.getElementById('ed-chamado2').value.trim()||'SHP-?';
+  var desc=document.getElementById('ed-desc2').value.trim()||'-';
+  var pac=document.getElementById('ed-pacote2').value.trim()||'-';
+  var qty=Math.min(20,Math.max(1,parseInt(document.getElementById('ed-qty2').value)||1));
+  for(var i=0;i<qty;i++) grid.appendChild(salvMkCard(op,ch,desc,pac));
+  toast('✅ '+qty+' etiqueta'+(qty>1?'s':'')+' gerada'+(qty>1?'s':''));
+}
+
+function salvImprimir(){
+  var cards=document.querySelectorAll('#salv-grid > div[data-tipo]');
+  if(!cards.length){toast('⚠️ Gere as etiquetas primeiro');return;}
+  var hoje=new Date().toLocaleDateString('pt-BR');
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">';
+  html+='<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">';
+  html+='<style>';
+  html+='@page{size:100mm 150mm;margin:0}';
+  html+='*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  html+='body{background:#fff;font-family:Arial,sans-serif}';
+  html+='.label{width:100mm;height:150mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always;break-after:page}';
+  html+='.label:last-child{page-break-after:avoid;break-after:avoid}';
+  html+='.dh{background:#CC0000;color:#fff;height:20mm;display:flex;align-items:center;justify-content:center;font-size:11pt;font-weight:700;flex-shrink:0}';
+  html+='.do{background:#1D1D1B;color:#FFE600;height:10mm;display:flex;align-items:center;justify-content:center;font-size:9pt;font-weight:700;flex-shrink:0}';
+  html+='.db{padding:3mm 4mm;flex:1;display:flex;flex-direction:column;gap:3mm;overflow:hidden}';
+  html+='.dl{font-size:6pt;color:#888;text-transform:uppercase;letter-spacing:.5pt}';
+  html+='.dv{font-size:10pt;font-weight:700;color:#111;word-break:break-word}';
+  html+='.bc{display:flex;border-top:.3mm solid #ddd;height:30mm;flex-shrink:0}';
+  html+='.bci{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2mm}';
+  html+='.bci:first-child{border-right:.3mm solid #ddd}';
+  html+='.bcl{font-size:5pt;color:#aaa;text-transform:uppercase;margin-bottom:1mm}';
+  html+='.bcb{font-family:"Libre Barcode 39 Text",monospace;font-size:24pt;line-height:1;color:#000}';
+  html+='.bcs{font-size:5pt;color:#555;text-align:center;margin-top:1mm}';
+  html+='.ft{height:6mm;background:#f5f5f5;border-top:.3mm solid #ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;flex-shrink:0}';
+  html+='</style></head><body>';
+  
+  cards.forEach(function(c){
+    var op=c.dataset.op,ch=c.dataset.chamado,desc=c.dataset.desc,pac=c.dataset.pacote;
+    html+='<div class="label">';
+    html+='<div class="dh">DEVOS - SALVADOS</div>';
+    html+='<div class="do">'+op+'</div>';
+    html+='<div class="db">';
+    html+='<div><div class="dl">Chamado</div><div class="dv">'+ch+'</div></div>';
+    html+='<div><div class="dl">Produto</div><div class="dv">'+desc+'</div></div>';
+    html+='<div><div class="dl">Pacote</div><div class="dv">'+pac+'</div></div>';
+    html+='</div>';
+    html+='<div class="bc">';
+    html+='<div class="bci"><div class="bcl">Chamado</div><div class="bcb">*'+ch+'*</div><div class="bcs">'+ch+'</div></div>';
+    html+='<div class="bci"><div class="bcl">Pacote</div><div class="bcb">*'+pac.replace(/[^A-Z0-9\-_]/gi,'').substring(0,12)+'*</div><div class="bcs">'+pac.substring(0,20)+'</div></div>';
+    html+='</div>';
+    html+='<div class="ft">SMG6 · '+hoje+'</div>';
+    html+='</div>';
+  });
+  
+  html+='</body></html>';
+  var win=window.open('','_blank','width=450,height=650');
+  if(!win){toast('❌ Permita pop-ups para imprimir');return;}
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(function(){win.print();},1000);
+  toast('✅ Abrindo impressão...');
+}
+
+
+// ═══════════════════════════════
+// ── SISTEMA DE ACESSO ──
+// ═══════════════════════════════
+const ADMIN_CODE_KEY = 'smg6_admin_code';
+const DEFAULT_ADMIN_CODE = 'SMG6ADMIN2024';
+
+function getAdminCode(){
+  return localStorage.getItem(ADMIN_CODE_KEY) || DEFAULT_ADMIN_CODE;
+}
+
+function isAdmin(){
+  return U && (U.admin === true);
+}
+
+// Mostra campo admin se já existe usuário cadastrado
+function checkShowAdminField(){
+  var users = DB.ga('users');
+  var wrap = document.getElementById('r-admin-wrap');
+  if(wrap) wrap.style.display = users.length > 0 ? 'block' : 'none';
+}
+
+// ── ADMIN FUNCTIONS ──
+function admMoverPacote(){
+  var id  = document.getElementById('adm-mv-id').value.trim().toUpperCase();
+  var de  = document.getElementById('adm-mv-de').value.trim().toUpperCase();
+  var para= document.getElementById('adm-mv-para').value.trim().toUpperCase();
+  if(!id||!de||!para){toast('⚠️ Preencha todos os campos');return}
+  var alocs = DB.ga('aloc');
+  var found = false;
+  alocs = alocs.map(function(a){
+    if(a.id===id && a.gaiola===de){
+      found=true;
+      return Object.assign({},a,{gaiola:para,cor:COR(para)});
+    }
+    return a;
+  });
+  if(!found){toast('❌ Pacote '+id+' não encontrado na gaiola '+de);return}
+  DB.s('aloc',alocs);
+  document.getElementById('adm-mv-id').value='';
+  document.getElementById('adm-mv-de').value='';
+  document.getElementById('adm-mv-para').value='';
+  toast('✅ '+id+' movido: '+de+' → '+para);
+}
+
+function admRetirarPacote(){
+  var id = document.getElementById('adm-del-id').value.trim().toUpperCase();
+  if(!id){toast('⚠️ Informe o ID do pacote');return}
+  var alocs = DB.ga('aloc');
+  var antes = alocs.length;
+  alocs = alocs.filter(function(a){return a.id!==id});
+  if(alocs.length===antes){toast('❌ Pacote não encontrado');return}
+  DB.s('aloc',alocs);
+  document.getElementById('adm-del-id').value='';
+  toast('✅ Pacote '+id+' retirado');
+}
+
+function admApagarSID(){
+  var id = document.getElementById('adm-del-sid').value.trim().toUpperCase();
+  if(!id){toast('⚠️ Informe o SID');return}
+  var sids = DB.ga('sids');
+  var antes = sids.length;
+  sids = sids.filter(function(s){return s.id!==id});
+  if(sids.length===antes){toast('❌ SID não encontrado');return}
+  DB.s('sids',sids);
+  document.getElementById('adm-del-sid').value='';
+  toast('✅ '+id+' apagado');
+  admRenderLists();
+}
+
+function admApagarGay(){
+  var id = document.getElementById('adm-del-gay').value.trim().toUpperCase();
+  if(!id){toast('⚠️ Informe o GAY');return}
+  var gays = DB.ga('gaylords');
+  var antes = gays.length;
+  gays = gays.filter(function(g){return g.id!==id});
+  if(gays.length===antes){toast('❌ Gaylord não encontrado');return}
+  DB.s('gaylords',gays);
+  document.getElementById('adm-del-gay').value='';
+  toast('✅ '+id+' apagado');
+  admRenderLists();
+}
+
+function admGerarSID(){
+  var qty = Math.min(50, Math.max(1, parseInt(document.getElementById('adm-gen-qty').value)||1));
+  var sids = DB.ga('sids');
+  var ultimo = sids.length ? parseInt(sids[0].id.replace('SID-','')) : 0;
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  for(var i=0; i<qty; i++){
+    ultimo++;
+    sids.unshift({id:'SID-'+String(ultimo).padStart(6,'0'),data:hoje,hora,operador:U.nome,verificacoes:0,ultima_verif:null});
+  }
+  DB.s('sids',sids);
+  toast('✅ '+qty+' etiqueta'+(qty>1?'s':'')+' SID gerada'+(qty>1?'s':''));
+  admRenderLists();
+}
+
+function admMudarCodigo(){
+  var novo = document.getElementById('adm-code-inp').value.trim();
+  if(!novo || novo.length < 4){toast('⚠️ Código mínimo 4 caracteres');return}
+  localStorage.setItem(ADMIN_CODE_KEY, novo);
+  document.getElementById('adm-code-inp').value='';
+  document.getElementById('adm-code-show').textContent = novo;
+  toast('✅ Código admin atualizado');
+}
+
+function admPromoverUser(lw){
+  var users = DB.ga('users');
+  users = users.map(function(u){
+    if(u.lw===lw) return Object.assign({},u,{admin:!u.admin});
+    return u;
+  });
+  DB.s('users',users);
+  // Atualiza usuário logado se for ele
+  if(U && U.lw===lw){
+    U = users.find(function(u){return u.lw===lw});
+    DB.s('user',U);
+  }
+  toast('✅ Permissão atualizada');
+  admRenderUsers();
+}
+
+function admRenderUsers(){
+  var users = DB.ga('users');
+  var el = document.getElementById('adm-users-list');
+  if(!el)return;
+  el.innerHTML = users.map(function(u){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:#F8F9FF;border-radius:7px;padding:8px 10px">'+
+      '<div><div style="font-size:12px;font-weight:700;color:var(--navy)">'+u.nome+' '+u.sobrenome+'</div>'+
+      '<div style="font-size:10px;color:var(--gray)">'+u.lw+'  ·  '+(u.admin?'🔐 Admin':'👷 Operador')+'</div></div>'+
+      '<button onclick="admPromoverUser(''+u.lw+'')" style="background:'+(u.admin?'#FFEBEE':'#E8F5E9')+';color:'+(u.admin?'var(--red)':'var(--green)')+';border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer">'+
+      (u.admin?'→ Operador':'→ Admin')+'</button></div>';
+  }).join('');
+}
+
+function admRenderLists(){
+  // SID list
+  var sids = DB.ga('sids');
+  var sidEl = document.getElementById('adm-sid-list');
+  if(sidEl) sidEl.textContent = sids.length ? sids.slice(0,5).map(function(s){return s.id}).join(' · ')+(sids.length>5?' ...':'') : 'Nenhuma etiqueta';
+  // Gay list
+  var gays = DB.ga('gaylords');
+  var gayEl = document.getElementById('adm-gay-list');
+  if(gayEl) gayEl.textContent = gays.length ? gays.slice(0,5).map(function(g){return g.id}).join(' · ')+(gays.length>5?' ...':'') : 'Nenhum gaylord';
+}
+
+function admRenderStats(){
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var el = document.getElementById('adm-stats');
+  if(!el)return;
+  var stats = [
+    {label:'Alocações hoje', val: DB.ga('aloc').filter(function(a){return a.data===hoje}).length},
+    {label:'Total SIDs', val: DB.ga('sids').length},
+    {label:'Total Gaylords', val: DB.ga('gaylords').length},
+    {label:'Usuários', val: DB.ga('users').length},
+    {label:'HUs expedidos', val: DB.ga('exp-hus').length},
+  ];
+  el.innerHTML = stats.map(function(s){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#F8F9FF;border-radius:6px">'+
+      '<span style="font-size:11px;color:var(--gray)">'+s.label+'</span>'+
+      '<span style="font-size:13px;font-weight:700;color:var(--navy)">'+s.val+'</span></div>';
+  }).join('');
+}
+
+function admLimparDia(){
+  if(!confirm('Limpar registros de dias anteriores?'))return;
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var alocs = DB.ga('aloc').filter(function(a){return a.data===hoje});
+  DB.s('aloc',alocs);
+  var devols = DB.ga('devol').filter(function(d){return d.data===hoje});
+  DB.s('devol',devols);
+  toast('✅ Dados antigos removidos');
+  admRenderStats();
+}
+
+function rAdmin(){
+  var nameEl = document.getElementById('adm-nome');
+  if(nameEl && U) nameEl.textContent = U.nome+' '+U.sobrenome+' ('+U.lw+')';
+  var codeEl = document.getElementById('adm-code-show');
+  if(codeEl) codeEl.textContent = getAdminCode();
+  admRenderUsers();
+  admRenderLists();
+  admRenderStats();
+}
+
+// ── GUIA DO OPERADOR ──
+function guideOpen(){
+  var m = document.getElementById('guide-modal');
+  if(m){m.style.display='block';document.body.style.overflow='hidden';}
+}
+function guideClose(){
+  var m = document.getElementById('guide-modal');
+  if(m){m.style.display='none';document.body.style.overflow='';}
+}
+
+// ── INIT ──
+// Garante que o DOM está pronto
+window.addEventListener('DOMContentLoaded', async function(){
+  // Inicia Supabase
+  await gridInit();
+  // Mostra tela de login explicitamente
+  const loginTela = document.getElementById('tela-login');
+  if(loginTela){
+    loginTela.style.cssText = 'display:block!important;padding-bottom:20px';
+  }
+  // Auto-login se usuário já existe
+  if(U && U.nome){
+    try{ entrar(); } catch(e){ 
+      console.error('Auto-login falhou:', e);
+      try{ expBuildOpts(); }catch(e2){}
+    }
+  } else {
+    try{ expBuildOpts(); } catch(e){}
+  }
+});
+</script>
+</body>
+</html>
