@@ -1067,13 +1067,15 @@ function toast(m){const a=document.getElementById('al');a.textContent=m;a.classL
 // ── FUNÇÕES DE LOGIN ──
 function showTab(tab){
   var isEntrar = tab === 'entrar';
-  document.getElementById('form-entrar').style.display = isEntrar ? 'block' : 'none';
-  document.getElementById('form-novo').style.display   = isEntrar ? 'none'  : 'block';
-  document.getElementById('tab-entrar').style.background = isEntrar ? 'var(--navy)' : '#fff';
-  document.getElementById('tab-entrar').style.color      = isEntrar ? 'var(--yellow)' : 'var(--navy)';
-  document.getElementById('tab-novo').style.background   = isEntrar ? '#fff' : 'var(--navy)';
-  document.getElementById('tab-novo').style.color        = isEntrar ? 'var(--navy)' : 'var(--yellow)';
-  if(!isEntrar) setTimeout(function(){ var el=document.getElementById('r-lw'); if(el)el.focus(); }, 100);
+  var fe = document.getElementById('form-entrar');
+  var fn = document.getElementById('form-novo');
+  var te = document.getElementById('tab-entrar');
+  var tn = document.getElementById('tab-novo');
+  if(fe) fe.style.display = isEntrar ? 'block' : 'none';
+  if(fn) fn.style.display = isEntrar ? 'none'  : 'block';
+  if(te){ te.style.background = isEntrar ? 'var(--navy)' : '#fff'; te.style.color = isEntrar ? 'var(--yellow)' : 'var(--navy)'; }
+  if(tn){ tn.style.background = isEntrar ? '#fff' : 'var(--navy)'; tn.style.color = isEntrar ? 'var(--navy)' : 'var(--yellow)'; }
+  if(!isEntrar){ setTimeout(function(){ var el=document.getElementById('r-lw'); if(el)el.focus(); }, 150); }
 }
 
 function msgErro(id, txt){
@@ -2282,23 +2284,31 @@ function guideClose(){
 
 // ── INIT ──
 // Garante que o DOM está pronto
-window.addEventListener('DOMContentLoaded', async function(){
-  // Inicia Supabase
-  await gridInit();
-  // Mostra tela de login explicitamente
-  const loginTela = document.getElementById('tela-login');
-  if(loginTela){
-    loginTela.style.cssText = 'display:block!important;padding-bottom:20px';
+window.addEventListener('DOMContentLoaded', function(){
+  // Mostra tela de login
+  var loginTela = document.getElementById('tela-login');
+  if(loginTela) loginTela.style.cssText='display:block!important;padding-bottom:20px;background:var(--bg);min-height:100vh';
+  
+  // Auto-login se sessão salva
+  if(U && U.nome && U.lw){
+    try{ entrar(); }catch(e){ console.warn('Auto-login:', e); }
   }
-  // Auto-login se usuário já existe
-  if(U && U.nome){
-    try{ entrar(); } catch(e){ 
-      console.error('Auto-login falhou:', e);
-      try{ expBuildOpts(); }catch(e2){}
-    }
-  } else {
-    try{ expBuildOpts(); } catch(e){}
-  }
+  
+  // Inicia Supabase em background (sem bloquear UI)
+  setTimeout(function(){
+    try{ gridInit(); }catch(e){ console.warn('Supabase:', e); }
+  }, 500);
+  
+  // Expedicao opts
+  setTimeout(function(){
+    try{ expBuildOpts(); }catch(e){}
+  }, 300);
+  
+  // Garante que abas do login funcionam
+  var tabEntrar = document.getElementById('tab-entrar');
+  var tabNovo   = document.getElementById('tab-novo');
+  if(tabEntrar) tabEntrar.onclick = function(){ showTab('entrar'); };
+  if(tabNovo)   tabNovo.onclick   = function(){ showTab('novo'); };
 });
 </script>
 </body>
