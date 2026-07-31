@@ -249,6 +249,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       <div id="msg-reg" style="margin-top:10px;font-size:12px"></div>
     </div>
 
+    <!-- LIMPAR DADOS LOCAIS — sempre visível, mesmo sem login -->
+    <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid #EEE">
+      <button onclick="loginLimparDados()" style="background:none;border:none;color:#C62828;font-size:11px;cursor:pointer;text-decoration:underline">
+        🗑️ Meu usuário já está cadastrado mas não consigo entrar? Limpar dados deste aparelho
+      </button>
+    </div>
   </div>
 
   <!-- SCRIPT ISOLADO DO LOGIN — roda independente do app -->
@@ -313,7 +319,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       if(pw!==cf){showMsg('msg-reg','⚠️ Senhas não conferem');return;}
       var users=lsArr('users');
       for(var i=0;i<users.length;i++){
-        if(users[i].lw&&users[i].lw.toLowerCase()===lw.toLowerCase()){showMsg('msg-reg','❌ Usuário LDPA já cadastrado');return;}
+        if(users[i].lw&&users[i].lw.toLowerCase()===lw.toLowerCase()){
+          showMsg('msg-reg','❌ Usuário LDPA já cadastrado — <a href="#" onclick="document.getElementById(\'in-lw\').value=\''+lw+'\';loginAba(\'entrar\');document.getElementById(\'in-senha\').focus();return false;" style="color:#1F3864;font-weight:700">clique aqui para Entrar</a> em vez de cadastrar de novo.');
+          return;
+        }
       }
       // Verifica se já existe um "dono" no banco (evita 2 devices virarem dono ao mesmo tempo)
       var jaTemDono = false;
@@ -352,6 +361,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     window.fazerRegistro=window.loginRegistrar;
     window.msgErro=function(id,t){showMsg(id,t);};
     window.msgOk=function(id,t){showMsg(id,t,'ok');};
+
+    window.loginLimparDados = function(){
+      var msg = 'Isso apaga o cadastro salvo NESTE APARELHO (não afeta outros operadores nem o banco de dados na nuvem).\n\n'+
+                'Se o problema é que seu usuário já foi cadastrado de verdade (no banco), limpar aqui NÃO vai resolver — '+
+                'nesse caso, use a aba "Entrar" com a senha que você criou.\n\n'+
+                'Deseja continuar e limpar os dados deste aparelho?';
+      if(!confirm(msg)) return;
+      try{ localStorage.clear(); }catch(e){}
+      alert('✅ Dados locais apagados. A página vai recarregar.');
+      location.reload();
+    };
   })();
   </script>
 </div>
