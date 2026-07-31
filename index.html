@@ -1060,6 +1060,14 @@ const SB_URL = 'https://pkeqkxjiranrxudnoorl.supabase.co';
 const SB_KEY = 'sb_publishable_YB1Rr9Yto7IrOzhb3odhYA_vt-S_dgB';
 let SB = null; // instância do cliente Supabase, criada em gridInit()
 
+// Cria o cliente IMEDIATAMENTE (é síncrono, não faz chamada de rede) —
+// assim SB já existe mesmo se o operador cadastrar rapidíssimo, antes do teste de conexão terminar
+try{
+  if(typeof supabase !== 'undefined' && supabase.createClient){
+    SB = supabase.createClient(SB_URL, SB_KEY);
+  }
+}catch(e){ console.warn('Criação imediata do cliente Supabase falhou:', e); }
+
 // DB — localStorage é a fonte imediata (sempre funciona, offline inclusive)
 const DB = {
   g(k){ try{return JSON.parse(localStorage.getItem('smg6_'+k))||null}catch{return null} },
@@ -1073,8 +1081,11 @@ let U = DB.g('user');
 function gridInit(){
   return new Promise(function(resolve){
     try{
-      if(typeof supabase === 'undefined' || !supabase.createClient){ resolve(); return; }
-      SB = supabase.createClient(SB_URL, SB_KEY);
+      if(!SB){
+        // Fallback: se por algum motivo não criou antes, tenta agora
+        if(typeof supabase === 'undefined' || !supabase.createClient){ resolve(); return; }
+        SB = supabase.createClient(SB_URL, SB_KEY);
+      }
       SB.from('usuarios').select('id').limit(1).then(function(r){
         if(!r.error){
           console.log('✅ Supabase conectado');
@@ -2619,7 +2630,7 @@ window.addEventListener('DOMContentLoaded', function(){
     try{ entrar(); return; }catch(e){ console.warn('Auto-login:', e); }
   }
   // Inicia Supabase em background
-  setTimeout(function(){ try{ gridInit(); }catch(e){} }, 1500);
+  setTimeout(function(){ try{ gridInit(); }catch(e){} }, 100);
   setTimeout(function(){ try{ expBuildOpts(); }catch(e){} }, 500);
 });
 </script>
