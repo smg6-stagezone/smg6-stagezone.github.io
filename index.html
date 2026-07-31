@@ -320,6 +320,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       users.push(u);
       lsSet('users',users);
       lsSet('user',u);
+      // Salva no Supabase também (SB é var/let global do script principal)
+      try{
+        if(typeof SB !== 'undefined' && SB){
+          SB.from('usuarios').insert({lw:lw,nome:nm,sobrenome:sb,senha:pw,admin:isAdm})
+            .then(function(r){ if(r.error) console.warn('Supabase insert usuarios:', r.error.message); })
+            .catch(function(e){ console.warn('Supabase insert usuarios:', e); });
+        } else {
+          console.warn('SB ainda não inicializado no momento do registro — usuário fica só local até sincronizar');
+        }
+      }catch(e){ console.warn('Erro ao tentar salvar no Supabase:', e); }
       showMsg('msg-reg','✅ Conta criada'+(isAdm?' (Admin)':'')+'! Entrando...','ok');
       setTimeout(function(){
         if(typeof entrar==='function') entrar();
@@ -744,6 +754,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       </div>
       <div style="font-size:10px;color:var(--gray);margin-top:4px">Código atual: <b id="adm-code-show">***</b></div>
     </div>
+  </div>
+
+  <!-- DIAGNÓSTICO SUPABASE -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">🔌 Diagnóstico Supabase</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Testa a conexão real com o banco de dados e mostra o erro exato, se houver.</div>
+    <button class="bp" onclick="admDiagnostico()">▶ Rodar Diagnóstico</button>
+    <div id="adm-diag-result" style="margin-top:10px;font-size:11px;font-family:monospace;background:#0D1117;color:#C9D1D9;border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-word;display:none;max-height:300px;overflow-y:auto"></div>
   </div>
 
   <!-- DADOS -->
@@ -2481,6 +2499,83 @@ function admRenderStats(){
       '<span style="font-size:11px;color:var(--gray)">'+s.label+'</span>'+
       '<span style="font-size:13px;font-weight:700;color:var(--navy)">'+s.val+'</span></div>';
   }).join('');
+}
+
+async function admDiagnostico(){
+  var out = document.getElementById('adm-diag-result');
+  out.style.display = 'block';
+  var log = [];
+  function w(line){ log.push(line); out.textContent = log.join('\n'); }
+
+  w('🔍 Iniciando diagnóstico...');
+  w('URL: ' + SB_URL);
+  w('Chave: ' + SB_KEY.substring(0,20) + '...');
+  w('');
+
+  // 1) Biblioteca supabase-js carregou?
+  if(typeof supabase === 'undefined'){
+    w('❌ ETAPA 1 — Biblioteca @supabase/supabase-js NÃO carregou.');
+    w('   Causa provável: CDN bloqueado pela rede/firewall da estação.');
+    w('   Teste: abra ' + '"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"' + ' direto no navegador.');
+    return;
+  }
+  w('✅ ETAPA 1 — Biblioteca supabase-js carregada');
+
+  // 2) Cliente criado?
+  if(!SB){
+    try{ SB = supabase.createClient(SB_URL, SB_KEY); w('✅ ETAPA 2 — Cliente criado agora'); }
+    catch(e){ w('❌ ETAPA 2 — Falha ao criar cliente: '+e.message); return; }
+  } else {
+    w('✅ ETAPA 2 — Cliente já existia');
+  }
+
+  // 3) Consegue LER a tabela usuarios?
+  w('');
+  w('📖 Testando leitura (SELECT usuarios)...');
+  try{
+    var rSel = await SB.from('usuarios').select('id').limit(1);
+    if(rSel.error){
+      w('❌ ETAPA 3 — Erro ao ler: ' + rSel.error.message);
+      w('   code: ' + (rSel.error.code||'—') + '  hint: ' + (rSel.error.hint||'—'));
+      w('   → Provável causa: tabela não existe ou RLS bloqueando leitura pública.');
+    } else {
+      w('✅ ETAPA 3 — Leitura OK (' + (rSel.data?rSel.data.length:0) + ' registro(s) retornado(s))');
+    }
+  }catch(e){
+    w('❌ ETAPA 3 — Exceção de rede: ' + e.message);
+    w('   → Provável causa: domínio supabase.co bloqueado pela rede da estação (firewall corporativo).');
+    return;
+  }
+
+  // 4) Consegue ESCREVER (insert de teste, depois remove)?
+  w('');
+  w('✏️ Testando escrita (INSERT de teste em alocacoes)...');
+  var testId = 'DIAGNOSTICO_' + Date.now();
+  try{
+    var rIns = await SB.from('alocacoes').insert({
+      pacote_id: testId, gaiola: 'TESTE', cor: '#000000',
+      operador: 'Diagnóstico', operador_lw: 'sistema',
+      data: new Date().toLocaleDateString('pt-BR'), hora: new Date().toLocaleTimeString('pt-BR')
+    }).select();
+    if(rIns.error){
+      w('❌ ETAPA 4 — Erro ao gravar: ' + rIns.error.message);
+      w('   code: ' + (rIns.error.code||'—') + '  hint: ' + (rIns.error.hint||'—'));
+      w('   → Provável causa: RLS (Row Level Security) sem policy de INSERT liberada para o público.');
+      w('   → Solução: no SQL Editor do Supabase, confirme que existe a policy "acesso_publico" com FOR ALL na tabela alocacoes.');
+    } else {
+      w('✅ ETAPA 4 — Escrita OK! Registro de teste criado.');
+      // Limpa o registro de teste
+      var delRes = await SB.from('alocacoes').delete().eq('pacote_id', testId);
+      w(delRes.error ? ('⚠️ Não consegui apagar o registro de teste: '+delRes.error.message) : '🧹 Registro de teste removido.');
+    }
+  }catch(e){
+    w('❌ ETAPA 4 — Exceção de rede ao escrever: ' + e.message);
+  }
+
+  w('');
+  w('=== RESULTADO ===');
+  var falhou = log.some(function(l){ return l.indexOf('❌')===0; });
+  w(falhou ? '⚠️ Encontramos problema(s) acima — revise as etapas marcadas com ❌.' : '🎉 TUDO CONECTADO! Os dados estão sendo salvos no Supabase normalmente.');
 }
 
 function admLimparDia(){
