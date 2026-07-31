@@ -299,7 +299,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       else location.reload();
     };
 
-    window.loginRegistrar = function(){
+    window.loginRegistrar = async function(){
       var lw=(document.getElementById('reg-lw').value||'').trim();
       var nm=(document.getElementById('reg-nome').value||'').trim();
       var sb=(document.getElementById('reg-sobre').value||'').trim();
@@ -315,15 +315,24 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       for(var i=0;i<users.length;i++){
         if(users[i].lw&&users[i].lw.toLowerCase()===lw.toLowerCase()){showMsg('msg-reg','❌ Usuário LDPA já cadastrado');return;}
       }
-      var isAdm=(users.length===0)||(cd&&cd===adminCode());
-      var u={lw:lw,nome:nm,sobrenome:sb,senha:pw,admin:isAdm,id:Date.now()};
+      // Verifica se já existe um "dono" no banco (evita 2 devices virarem dono ao mesmo tempo)
+      var jaTemDono = false;
+      try{
+        if(typeof SB !== 'undefined' && SB){
+          var rOwner = await SB.from('usuarios').select('id').eq('owner', true).limit(1);
+          if(rOwner.data && rOwner.data.length>0) jaTemDono = true;
+        }
+      }catch(e){ /* offline: segue com heurística local */ }
+      var isPrimeiro = !jaTemDono && (users.length===0);
+      var isAdm = isPrimeiro || (cd && cd===adminCode());
+      var u={lw:lw,nome:nm,sobrenome:sb,senha:pw,admin:isAdm,owner:isPrimeiro,id:Date.now()};
       users.push(u);
       lsSet('users',users);
       lsSet('user',u);
       // Salva no Supabase também (SB é var/let global do script principal)
       try{
         if(typeof SB !== 'undefined' && SB){
-          SB.from('usuarios').insert({lw:lw,nome:nm,sobrenome:sb,senha:pw,admin:isAdm})
+          SB.from('usuarios').insert({lw:lw,nome:nm,sobrenome:sb,senha:pw,admin:isAdm,owner:isPrimeiro})
             .then(function(r){ if(r.error) console.warn('Supabase insert usuarios:', r.error.message); })
             .catch(function(e){ console.warn('Supabase insert usuarios:', e); });
         } else {
@@ -677,14 +686,66 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
   <div style="background:linear-gradient(135deg,#4A0072,#7B1FA2);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
     <div style="font-size:28px">🔐</div>
     <div><div style="font-size:13px;font-weight:700;color:#fff" id="adm-nome">Admin</div>
-    <div style="font-size:10px;color:rgba(255,255,255,.7)">Acesso total · SMG6</div></div>
+    <div style="font-size:10px;color:rgba(255,255,255,.7)" id="adm-subtitulo">Acesso total · SMG6</div></div>
   </div>
 
-  <!-- GESTÃO DE PACOTES -->
+  <!-- ═══ INDICADORES (só dono) ═══ -->
+  <div id="adm-indicadores-wrap" style="display:none;margin-bottom:10px">
+    <div class="exp-section">
+      <div class="exp-title">📈 Indicadores — hoje</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="adm-kpis"></div>
+      <div style="margin-top:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Alocações por zona</div>
+        <div id="adm-zona-bars" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ranking de operadores</div>
+        <div id="adm-ranking-op" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DESFAZER: ALOCAÇÕES ═══ -->
   <div class="exp-section" style="margin-bottom:10px">
-    <div class="exp-title">📦 Gestão de Pacotes</div>
+    <div class="exp-title">↩️ Desfazer — Alocações recentes</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:8px">O operador alocou um pacote na gaiola errada? Desfaça aqui.</div>
+    <div id="adm-list-aloc" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- ═══ DESFAZER: EMBALAGENS ═══ -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">↩️ Desfazer — Embalagens no Gaylord</div>
+    <div id="adm-list-emb" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- ═══ DESFAZER: ETIQUETAS GERADAS ═══ -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">↩️ Desfazer — Etiquetas geradas</div>
+    <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:8px 0 4px">Sem ID</div>
+    <div id="adm-list-sid" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin:10px 0 4px">Gaylord</div>
+    <div id="adm-list-gay" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- ═══ DESFAZER: DEVOLUÇÕES ═══ -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">↩️ Desfazer — Devoluções montadas</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:8px">Remove o registro da montagem (não recria os pacotes automaticamente).</div>
+    <div id="adm-list-devol" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- ═══ DESFAZER: EXPEDIÇÃO HU ═══ -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">↩️ Desfazer — HUs de Expedição</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:8px">Reabre um HU fechado por engano, liberando pra continuar adicionando pacotes.</div>
+    <div id="adm-list-hu" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+
+  <!-- ═══ CORREÇÃO MANUAL (fallback por ID) ═══ -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">🔧 Correção Manual (por ID)</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Use quando o registro não aparecer nas listas acima (mais antigo que os últimos exibidos).</div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <!-- Mover pacote -->
       <div style="background:#F8F9FF;border-radius:8px;padding:12px">
         <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">↔️ Mover Pacote de Gaiola</div>
         <div style="display:flex;gap:6px;margin-bottom:6px">
@@ -697,7 +758,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
           <button class="bok" onclick="admMoverPacote()" style="padding:8px 12px">✓</button>
         </div>
       </div>
-      <!-- Retirar pacote -->
       <div style="background:#F8F9FF;border-radius:8px;padding:12px">
         <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">✂️ Retirar Pacote da Gaiola</div>
         <div style="display:flex;gap:6px">
@@ -705,32 +765,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
           <button class="bok" style="background:var(--red);padding:8px 12px" onclick="admRetirarPacote()">×</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- GESTÃO DE ETIQUETAS -->
-  <div class="exp-section" style="margin-bottom:10px">
-    <div class="exp-title">🏷️ Gestão de Etiquetas</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <!-- Apagar etiqueta SID -->
-      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
-        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🗑️ Apagar Etiqueta Sem ID</div>
-        <div style="display:flex;gap:6px">
-          <input id="adm-del-sid" class="sinp" placeholder="SID-000001" style="font-size:12px;padding:8px 10px">
-          <button class="bok" style="background:var(--red);padding:8px 12px" onclick="admApagarSID()">×</button>
-        </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:5px" id="adm-sid-list"></div>
-      </div>
-      <!-- Apagar etiqueta Gaylord -->
-      <div style="background:#F8F9FF;border-radius:8px;padding:12px">
-        <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">🗑️ Apagar Gaylord</div>
-        <div style="display:flex;gap:6px">
-          <input id="adm-del-gay" class="sinp" placeholder="GAY-000001" style="font-size:12px;padding:8px 10px">
-          <button class="bok" style="background:var(--red);padding:8px 12px" onclick="admApagarGay()">×</button>
-        </div>
-        <div style="font-size:10px;color:var(--gray);margin-top:5px" id="adm-gay-list"></div>
-      </div>
-      <!-- Gerar etiquetas avulsas -->
       <div style="background:#F8F9FF;border-radius:8px;padding:12px">
         <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">➕ Gerar Etiquetas SID Avulsas</div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -742,7 +776,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     </div>
   </div>
 
-  <!-- GESTÃO DE USUÁRIOS -->
+  <!-- ═══ GESTÃO DE USUÁRIOS ═══ -->
   <div class="exp-section" style="margin-bottom:10px">
     <div class="exp-title">👥 Usuários Cadastrados</div>
     <div id="adm-users-list" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -765,10 +799,25 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
   </div>
 
   <!-- DADOS -->
-  <div class="exp-section">
+  <div class="exp-section" style="margin-bottom:10px">
     <div class="exp-title">📊 Dados do Sistema</div>
     <div style="display:flex;flex-direction:column;gap:6px" id="adm-stats"></div>
     <button class="bp2" style="margin-top:10px" onclick="admLimparDia()">🗑️ Limpar dados do dia anterior</button>
+  </div>
+
+  <!-- ═══ RESET TOTAL (só dono) ═══ -->
+  <div id="adm-reset-wrap" style="display:none">
+    <div class="exp-section" style="border:2px solid #C62828">
+      <div class="exp-title" style="color:#C62828">☢️ Zona de Risco — Reset Total</div>
+      <div style="font-size:11px;color:#B71C1C;margin-bottom:10px;line-height:1.5">
+        Isso apaga <b>TODOS</b> os dados do app — alocações, embalagens, etiquetas, devoluções, HUs e usuários (menos você). Não pode ser desfeito. Use apenas para reiniciar a operação do zero.
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;display:block;margin-bottom:5px">Digite RESETAR para confirmar</label>
+        <input id="adm-reset-confirm" class="sinp" placeholder="RESETAR" style="width:100%">
+      </div>
+      <button style="width:100%;background:#C62828;color:#fff;border:none;padding:13px;border-radius:9px;font-weight:700;font-size:14px;cursor:pointer" onclick="admResetTotal()">☢️ Resetar Aplicativo do Zero</button>
+    </div>
   </div>
 </div>
 
@@ -1106,7 +1155,7 @@ function sbSyncUsers(){
   SB.from('usuarios').select('*').then(function(r){
     if(r.data && r.data.length){
       var users = r.data.map(function(u){
-        return {lw:u.lw, nome:u.nome, sobrenome:u.sobrenome, senha:u.senha, admin:u.admin, id:u.id};
+        return {lw:u.lw, nome:u.nome, sobrenome:u.sobrenome, senha:u.senha, admin:u.admin, owner:!!u.owner, id:u.id};
       });
       DB.s('users', users);
       console.log('✅ '+users.length+' usuários sincronizados do Supabase');
@@ -1278,61 +1327,6 @@ function showTab(tab){
   if(!isEntrar) setTimeout(function(){ var el=document.getElementById('r-lw'); if(el)el.focus(); }, 100);
 }
 
-function msgErro(id, txt){
-  var el = document.getElementById(id);
-  if(el) el.innerHTML = '<div style="background:#FFEBEE;color:#C62828;border:1px solid #C62828;border-radius:7px;padding:9px 12px;font-size:12px">' + txt + '</div>';
-}
-function msgOk(id, txt){
-  var el = document.getElementById(id);
-  if(el) el.innerHTML = '<div style="background:#E8F5E9;color:#2E7D32;border:1px solid #2E7D32;border-radius:7px;padding:9px 12px;font-size:12px">' + txt + '</div>';
-}
-
-function fazerLogin(){
-  var lw    = document.getElementById('l-lw').value.trim();
-  var senha = document.getElementById('l-senha').value;
-  if(!lw)   { msgErro('msg-login','Informe o usuário LDPA'); return; }
-  if(!senha) { msgErro('msg-login','Informe a senha'); return; }
-  var users = DB.ga('users');
-  var u = null;
-  for(var i=0;i<users.length;i++){
-    if(users[i].lw && users[i].lw.toLowerCase()===lw.toLowerCase() && users[i].senha===senha){ u=users[i]; break; }
-  }
-  if(!u){ msgErro('msg-login','Usuário LDPA ou senha incorretos'); return; }
-  DB.s('user', u);
-  U = u;
-  entrar();
-}
-
-function fazerRegistro(){
-  var lw    = document.getElementById('r-lw').value.trim();
-  var nome  = document.getElementById('r-nome').value.trim();
-  var sobre = document.getElementById('r-sobre').value.trim();
-  var senha = document.getElementById('r-senha').value;
-  var conf  = document.getElementById('r-conf').value;
-  var adminCode = (document.getElementById('r-admin-code')||{}).value||'';
-  if(!lw)    { msgErro('msg-reg','Informe o usuário LDPA'); return; }
-  if(!nome)  { msgErro('msg-reg','Informe o nome'); return; }
-  if(!sobre) { msgErro('msg-reg','Informe o sobrenome'); return; }
-  if(senha.length < 4){ msgErro('msg-reg','Senha mínimo 4 caracteres'); return; }
-  if(senha !== conf)  { msgErro('msg-reg','Senhas não conferem'); return; }
-  var users = DB.ga('users');
-  for(var i=0;i<users.length;i++){
-    if(users[i].lw && users[i].lw.toLowerCase()===lw.toLowerCase()){ msgErro('msg-reg','Usuário LDPA já cadastrado'); return; }
-  }
-  // Primeiro usuário vira admin automaticamente
-  var isAdminUser = users.length === 0;
-  // Ou se inseriu o código admin correto
-  if(!isAdminUser && adminCode && adminCode === getAdminCode()) isAdminUser = true;
-  var u = { lw:lw, nome:nome, sobrenome:sobre, senha:senha, id:Date.now(), admin:isAdminUser };
-  users.push(u);
-  DB.s('users', users);
-  DB.s('user', u);
-  U = u;
-  // Salva no Supabase
-  sbInsert('usuarios', {lw:lw, nome:nome, sobrenome:sobre, senha:senha, admin:isAdminUser});
-  msgOk('msg-reg','✅ Conta criada'+(isAdminUser?' (Admin)':'')+' Entrando...');
-  setTimeout(entrar, 800);
-}
 function entrar(){
   var stored = DB.g('user');
   if(!U && stored) U = stored;
@@ -2603,11 +2597,247 @@ function admLimparDia(){
 function rAdmin(){
   var nameEl = document.getElementById('adm-nome');
   if(nameEl && U) nameEl.textContent = U.nome+' '+U.sobrenome+' ('+U.lw+')';
+  var subEl = document.getElementById('adm-subtitulo');
+  if(subEl) subEl.textContent = (U && U.owner ? '👑 Dono do app · ' : 'Admin · ') + 'SMG6';
   var codeEl = document.getElementById('adm-code-show');
   if(codeEl) codeEl.textContent = getAdminCode();
+
+  // Indicadores e Reset só para o dono (primeiro admin cadastrado)
+  var isOwner = !!(U && U.owner);
+  var indEl = document.getElementById('adm-indicadores-wrap');
+  var resetEl = document.getElementById('adm-reset-wrap');
+  if(indEl) indEl.style.display = isOwner ? 'block' : 'none';
+  if(resetEl) resetEl.style.display = isOwner ? 'block' : 'none';
+  if(isOwner) admRenderIndicadores();
+
   admRenderUsers();
   admRenderLists();
   admRenderStats();
+  admRenderUndoLists();
+}
+
+// ── LISTAS DE DESFAZER (espelho de cada ação do operador) ──
+function admRenderUndoLists(){
+  var hoje = new Date().toLocaleDateString('pt-BR');
+
+  // Alocações (mostra as 12 mais recentes)
+  var aloc = DB.ga('aloc').slice(0,12);
+  document.getElementById('adm-list-aloc').innerHTML = aloc.length ? aloc.map(function(r,i){
+    return '<div class="reg"><div><div class="rc">'+r.id+'</div><div class="ri">'+r.operador+' · '+r.hora+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:6px">'+
+      '<span class="gbadge" style="background:'+r.cor+'">'+r.gaiola+'</span>'+
+      '<button onclick="admDesfazerAloc('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button>'+
+      '</div></div>';
+  }).join('') : '<div class="empty"><div class="ic">📦</div>Nenhuma alocação ainda</div>';
+
+  // Embalagens
+  var emb = DB.ga('descartes').slice(0,12);
+  document.getElementById('adm-list-emb').innerHTML = emb.length ? emb.map(function(r,i){
+    return '<div class="reg"><div><div class="rc">'+r.cod+'</div><div class="ri">'+r.operador+' · '+r.hora+' · '+r.gaylord+'</div></div>'+
+      '<button onclick="admDesfazerEmb('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+  }).join('') : '<div class="empty"><div class="ic">📥</div>Nenhuma embalagem ainda</div>';
+
+  // SIDs
+  var sids = DB.ga('sids').slice(0,10);
+  document.getElementById('adm-list-sid').innerHTML = sids.length ? sids.map(function(s,i){
+    return '<div class="reg"><div><div class="rc">'+s.id+'</div><div class="ri">'+s.operador+' · '+s.data+' · 🔍'+s.verificacoes+'x</div></div>'+
+      '<button onclick="admDesfazerSID('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+  }).join('') : '<div class="empty"><div class="ic">🔍</div>Nenhuma etiqueta ainda</div>';
+
+  // Gaylords
+  var gays = DB.ga('gaylords').slice(0,10);
+  document.getElementById('adm-list-gay').innerHTML = gays.length ? gays.map(function(g,i){
+    return '<div class="reg"><div><div class="rc">'+g.id+'</div><div class="ri">'+g.operador+' · '+g.data+'</div></div>'+
+      '<button onclick="admDesfazerGay('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+  }).join('') : '<div class="empty"><div class="ic">🏷️</div>Nenhum gaylord ainda</div>';
+
+  // Devoluções
+  var devol = DB.ga('devol').slice(0,10);
+  document.getElementById('adm-list-devol').innerHTML = devol.length ? devol.map(function(d,i){
+    return '<div class="reg"><div><div class="rc">'+d.gaiolas.join(', ')+'</div><div class="ri">'+d.operador+' · '+d.hora+'</div></div>'+
+      '<button onclick="admDesfazerDevol('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+  }).join('') : '<div class="empty"><div class="ic">📤</div>Nenhuma montagem ainda</div>';
+
+  // HUs
+  var hus = DB.ga('hus').slice(0,10);
+  document.getElementById('adm-list-hu').innerHTML = hus.length ? hus.map(function(h,i){
+    return '<div class="reg"><div><div class="rc">'+h.id+'</div><div class="ri">'+h.operador+' · '+h.data+'</div></div>'+
+      '<button onclick="admReabrirHU('+i+')" style="background:#FFF3E0;color:var(--ps);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Reabrir</button></div>';
+  }).join('') : '<div class="empty"><div class="ic">🚚</div>Nenhum HU fechado ainda</div>';
+}
+
+function admDesfazerAloc(idx){
+  var arr = DB.ga('aloc');
+  var item = arr[idx];
+  if(!item) return;
+  if(!confirm('Desfazer alocação de '+item.id+' na gaiola '+item.gaiola+'?')) return;
+  arr.splice(idx,1);
+  DB.s('aloc', arr);
+  // Tenta remover no Supabase pelo conjunto de campos (match preciso)
+  if(SB){
+    SB.from('alocacoes').delete()
+      .eq('pacote_id', item.id).eq('gaiola', item.gaiola).eq('hora', item.hora).eq('operador', item.operador)
+      .catch(function(e){ console.warn('Desfazer aloc Supabase:', e); });
+  }
+  toast('✅ Alocação de '+item.id+' desfeita');
+  admRenderUndoLists();
+}
+function admDesfazerEmb(idx){
+  var arr = DB.ga('descartes');
+  var item = arr[idx];
+  if(!item) return;
+  if(!confirm('Desfazer embalagem '+item.cod+' do '+item.gaylord+'?')) return;
+  arr.splice(idx,1);
+  DB.s('descartes', arr);
+  if(SB){
+    SB.from('embalagens').delete()
+      .eq('pacote_id', item.cod).eq('gaylord_id', item.gaylord).eq('hora', item.hora)
+      .catch(function(e){ console.warn('Desfazer emb Supabase:', e); });
+  }
+  toast('✅ Embalagem '+item.cod+' desfeita');
+  admRenderUndoLists();
+}
+function admDesfazerSID(idx){
+  var arr = DB.ga('sids');
+  var item = arr[idx];
+  if(!item) return;
+  if(!confirm('Apagar etiqueta '+item.id+'? (irreversível)')) return;
+  arr.splice(idx,1);
+  DB.s('sids', arr);
+  if(SB) SB.from('sids').delete().eq('sid_id', item.id).catch(function(e){ console.warn(e); });
+  toast('✅ '+item.id+' apagado');
+  admRenderUndoLists();
+}
+function admDesfazerGay(idx){
+  var arr = DB.ga('gaylords');
+  var item = arr[idx];
+  if(!item) return;
+  var usados = DB.ga('descartes').filter(function(d){ return d.gaylord===item.id; }).length;
+  if(usados>0 && !confirm('Este gaylord tem '+usados+' embalagem(ns) registrada(s). Apagar mesmo assim?')) return;
+  if(usados===0 && !confirm('Apagar gaylord '+item.id+'?')) return;
+  arr.splice(idx,1);
+  DB.s('gaylords', arr);
+  if(SB) SB.from('gaylords').delete().eq('gay_id', item.id).catch(function(e){ console.warn(e); });
+  toast('✅ '+item.id+' apagado');
+  admRenderUndoLists();
+}
+function admDesfazerDevol(idx){
+  var arr = DB.ga('devol');
+  var item = arr[idx];
+  if(!item) return;
+  if(!confirm('Remover registro da montagem ('+item.gaiolas.join(', ')+')? Os pacotes não voltam automaticamente.')) return;
+  arr.splice(idx,1);
+  DB.s('devol', arr);
+  if(SB){
+    SB.from('devol').delete()
+      .eq('operador', item.operador).eq('hora', item.hora)
+      .catch(function(e){ console.warn(e); });
+  }
+  toast('✅ Registro de devolução removido');
+  admRenderUndoLists();
+}
+function admReabrirHU(idx){
+  var arr = DB.ga('hus');
+  var item = arr[idx];
+  if(!item) return;
+  if(!confirm('Reabrir '+item.id+'? Isso permite adicionar mais pacotes a ele.')) return;
+  arr.splice(idx,1);
+  DB.s('hus', arr);
+  if(SB) SB.from('hus').delete().eq('hu_id', item.id).catch(function(e){ console.warn(e); });
+  toast('✅ '+item.id+' reaberto — disponível na Expedição HU');
+  admRenderUndoLists();
+  try{ rExp(); }catch(e){}
+}
+
+// ── INDICADORES (só dono) ──
+function admRenderIndicadores(){
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var alocHoje = DB.ga('aloc').filter(function(a){ return a.data===hoje; });
+  var embHoje = DB.ga('descartes').filter(function(d){ return d.data===hoje; });
+  var sidsHoje = DB.ga('sids').filter(function(s){ return s.data===hoje; });
+  var gaysHoje = DB.ga('gaylords').filter(function(g){ return g.data===hoje; });
+  var husHoje = DB.ga('hus').filter(function(h){ return h.data===hoje; });
+  var users = DB.ga('users');
+
+  // Pacotes por minuto (baseado no intervalo entre 1º e último horário de hoje)
+  var ppm = '—';
+  if(alocHoje.length>=2){
+    function toMin(hstr){ var p=hstr.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
+    var horarios = alocHoje.map(function(a){return toMin(a.hora);});
+    var minH=Math.min.apply(null,horarios), maxH=Math.max.apply(null,horarios);
+    var intervalo = Math.max(1, maxH-minH);
+    ppm = (alocHoje.length/intervalo).toFixed(1);
+  }
+
+  var kpis = [
+    {label:'Alocações hoje', val:alocHoje.length, cor:'var(--dev)'},
+    {label:'Pacotes / minuto', val:ppm, cor:'var(--navy)'},
+    {label:'Embalagens hoje', val:embHoje.length, cor:'#37474F'},
+    {label:'SIDs gerados hoje', val:sidsHoje.length, cor:'var(--sid)'},
+    {label:'Gaylords hoje', val:gaysHoje.length, cor:'var(--blk)'},
+    {label:'HUs fechados hoje', val:husHoje.length, cor:'var(--fin)'},
+    {label:'Usuários cadastrados', val:users.length, cor:'var(--green)'},
+    {label:'Operadores ativos hoje', val:new Set(alocHoje.map(function(a){return a.operador;})).size, cor:'var(--ps)'},
+  ];
+  document.getElementById('adm-kpis').innerHTML = kpis.map(function(k){
+    return '<div style="background:#F8F9FF;border-radius:9px;padding:12px;border-left:4px solid '+k.cor+'">'+
+      '<div style="font-size:22px;font-weight:900;color:'+k.cor+'">'+k.val+'</div>'+
+      '<div style="font-size:10px;color:var(--gray);margin-top:2px">'+k.label+'</div></div>';
+  }).join('');
+
+  // Distribuição por zona (barras)
+  var porZona = {};
+  alocHoje.forEach(function(a){ porZona[a.gaiola]=(porZona[a.gaiola]||0)+1; });
+  var porZonaAgrupado = {};
+  ZONAS.forEach(function(z){
+    var total = z.ids.reduce(function(s,id){ return s+(porZona[id]||0); },0);
+    if(total>0) porZonaAgrupado[z.nome]={total:total,cor:z.cor};
+  });
+  var maxZona = Math.max(1, Object.keys(porZonaAgrupado).map(function(k){return porZonaAgrupado[k].total;}).reduce(function(a,b){return Math.max(a,b);},0));
+  var zonaKeys = Object.keys(porZonaAgrupado).sort(function(a,b){return porZonaAgrupado[b].total-porZonaAgrupado[a].total;});
+  document.getElementById('adm-zona-bars').innerHTML = zonaKeys.length ? zonaKeys.map(function(nome){
+    var d = porZonaAgrupado[nome];
+    var pct = Math.round((d.total/maxZona)*100);
+    return '<div><div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px"><span>'+nome+'</span><span style="font-weight:700">'+d.total+'</span></div>'+
+      '<div style="background:#F0F0F0;border-radius:5px;height:8px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+d.cor+'"></div></div></div>';
+  }).join('') : '<div style="font-size:11px;color:var(--gray)">Sem alocações hoje ainda</div>';
+
+  // Ranking de operadores
+  var porOp = {};
+  alocHoje.forEach(function(a){ porOp[a.operador]=(porOp[a.operador]||0)+1; });
+  var opKeys = Object.keys(porOp).sort(function(a,b){return porOp[b]-porOp[a];}).slice(0,5);
+  document.getElementById('adm-ranking-op').innerHTML = opKeys.length ? opKeys.map(function(op,i){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;background:#F8F9FF;border-radius:7px;padding:7px 10px">'+
+      '<span style="font-size:11px;font-weight:700;color:var(--navy)">'+(i+1)+'º '+op+'</span>'+
+      '<span style="font-size:12px;font-weight:900;color:var(--dev)">'+porOp[op]+' pcts</span></div>';
+  }).join('') : '<div style="font-size:11px;color:var(--gray)">Sem dados ainda</div>';
+}
+
+// ── RESET TOTAL (só dono) ──
+function admResetTotal(){
+  var conf = (document.getElementById('adm-reset-confirm').value||'').trim();
+  if(conf !== 'RESETAR'){ toast('⚠️ Digite RESETAR exatamente para confirmar'); return; }
+  if(!confirm('ÚLTIMA CONFIRMAÇÃO: isso apaga TUDO permanentemente. Continuar?')) return;
+
+  var meuUsuario = U; // preserva a própria conta do dono
+  ['aloc','descartes','sids','gaylords','devol','hus','exp','exp-hus','ps'].forEach(function(k){
+    DB.s(k, []);
+  });
+  // Mantém só o usuário dono na lista local
+  DB.s('users', [meuUsuario]);
+  DB.s('user', meuUsuario);
+
+  // Limpa no Supabase também (best-effort, tabela por tabela)
+  if(SB){
+    ['alocacoes','embalagens','sids','gaylords','devol','hus','expedicao_shipments'].forEach(function(t){
+      SB.from(t).delete().neq('id',0).catch(function(e){ console.warn('Reset '+t+':', e); });
+    });
+    // Remove todos os usuários exceto o dono
+    SB.from('usuarios').delete().neq('lw', meuUsuario.lw).catch(function(e){ console.warn('Reset usuarios:', e); });
+  }
+
+  toast('☢️ Aplicativo resetado! Recarregando...');
+  setTimeout(function(){ location.reload(); }, 1500);
 }
 
 // ── GUIA DO OPERADOR ──
