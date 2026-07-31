@@ -182,7 +182,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 <!-- HEADER -->
 <div class="hdr" id="hdr" style="display:none">
   <div style="display:flex;align-items:center;gap:8px"><div class="logo">SMG6</div><h1>Zona PS & Stage Zone</h1></div>
-  <div class="hdr-r"><b id="hdr-n">—</b><button class="btn-sair" onclick="logout()">Sair</button></div>
+  <div class="hdr-r" style="display:flex;align-items:center;gap:8px">
+    <button onclick="admRebootApp()" title="Reiniciar app" style="background:none;border:1px solid #8BA3CC;color:#8BA3CC;border-radius:5px;width:26px;height:26px;font-size:13px;cursor:pointer">🔄</button>
+    <div><b id="hdr-n">—</b><button class="btn-sair" onclick="logout()">Sair</button></div>
+  </div>
 </div>
 
 <!-- ══ LOGIN ══ -->
@@ -798,7 +801,27 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 
   <!-- ═══ GESTÃO DE USUÁRIOS ═══ -->
   <div class="exp-section" style="margin-bottom:10px">
-    <div class="exp-title">👥 Usuários Cadastrados</div>
+    <div class="exp-title">👥 Gestão de Usuários</div>
+
+    <!-- Cadastrar novo usuário direto pelo admin -->
+    <div style="background:#F8F9FF;border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:8px">➕ Cadastrar Novo Usuário</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <input id="adm-nu-lw" class="sinp" placeholder="Usuário LDPA" style="font-size:12px;padding:8px 10px">
+        <div style="display:flex;gap:6px">
+          <input id="adm-nu-nome" class="sinp" placeholder="Nome" style="font-size:12px;padding:8px 10px;flex:1">
+          <input id="adm-nu-sobre" class="sinp" placeholder="Sobrenome" style="font-size:12px;padding:8px 10px;flex:1">
+        </div>
+        <input id="adm-nu-senha" class="sinp" type="text" placeholder="Senha inicial" style="font-size:12px;padding:8px 10px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--navy);cursor:pointer">
+          <input type="checkbox" id="adm-nu-admin" style="width:14px;height:14px"> Cadastrar como Admin
+        </label>
+        <button class="bp" style="margin-top:2px" onclick="admCadastrarUsuario()">Cadastrar Usuário</button>
+      </div>
+      <div id="adm-nu-msg" style="margin-top:8px;font-size:11px"></div>
+    </div>
+
+    <div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Usuários cadastrados</div>
     <div id="adm-users-list" style="display:flex;flex-direction:column;gap:6px"></div>
     <div style="margin-top:10px">
       <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">🔑 Código Admin Atual</div>
@@ -808,6 +831,13 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       </div>
       <div style="font-size:10px;color:var(--gray);margin-top:4px">Código atual: <b id="adm-code-show">***</b></div>
     </div>
+  </div>
+
+  <!-- ═══ REINICIAR APP ═══ -->
+  <div class="exp-section" style="margin-bottom:10px">
+    <div class="exp-title">🔄 Reiniciar Aplicativo</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Recarrega o app do zero (sem apagar nada) — útil se algo travou ou parou de responder.</div>
+    <button class="bp2" onclick="admRebootApp()">🔄 Reiniciar Agora</button>
   </div>
 
   <!-- DIAGNÓSTICO SUPABASE -->
@@ -2470,18 +2500,82 @@ function admMudarCodigo(){
 
 function admPromoverUser(lw){
   var users = DB.ga('users');
+  var alvo = users.find(function(u){return u.lw===lw;});
+  if(alvo && alvo.owner){ toast('⚠️ O dono do app não pode ter a permissão alterada por aqui'); return; }
   users = users.map(function(u){
     if(u.lw===lw) return Object.assign({},u,{admin:!u.admin});
     return u;
   });
   DB.s('users',users);
-  // Atualiza usuário logado se for ele
   if(U && U.lw===lw){
     U = users.find(function(u){return u.lw===lw});
     DB.s('user',U);
   }
+  if(SB){
+    var novoStatus = !alvo.admin;
+    SB.from('usuarios').update({admin:novoStatus}).eq('lw',lw).catch(function(e){console.warn('Promover Supabase:',e);});
+  }
   toast('✅ Permissão atualizada');
   admRenderUsers();
+}
+
+function admExcluirUsuario(lw){
+  var users = DB.ga('users');
+  var alvo = users.find(function(u){return u.lw===lw;});
+  if(!alvo) return;
+  if(alvo.owner){ toast('⚠️ O dono do app não pode ser excluído'); return; }
+  if(U && U.lw===lw){ toast('⚠️ Você não pode excluir sua própria conta enquanto logado nela'); return; }
+  if(!confirm('Excluir o usuário '+alvo.nome+' '+alvo.sobrenome+' ('+lw+')? Ele não conseguirá mais entrar no app.')) return;
+  users = users.filter(function(u){return u.lw!==lw;});
+  DB.s('users', users);
+  if(SB){
+    SB.from('usuarios').delete().eq('lw',lw).catch(function(e){console.warn('Excluir usuario Supabase:',e);});
+  }
+  toast('✅ Usuário '+lw+' excluído');
+  admRenderUsers();
+}
+
+function admCadastrarUsuario(){
+  var lw    = (document.getElementById('adm-nu-lw').value||'').trim();
+  var nome  = (document.getElementById('adm-nu-nome').value||'').trim();
+  var sobre = (document.getElementById('adm-nu-sobre').value||'').trim();
+  var senha = (document.getElementById('adm-nu-senha').value||'').trim();
+  var comoAdmin = document.getElementById('adm-nu-admin').checked;
+  var msgEl = document.getElementById('adm-nu-msg');
+  function msg(txt, ok){
+    msgEl.innerHTML = '<div style="background:'+(ok?'#E8F5E9':'#FFEBEE')+';color:'+(ok?'#2E7D32':'#C62828')+';border:1px solid '+(ok?'#2E7D32':'#C62828')+';border-radius:6px;padding:7px 10px">'+txt+'</div>';
+  }
+  if(!lw){ msg('⚠️ Informe o usuário LDPA'); return; }
+  if(!nome){ msg('⚠️ Informe o nome'); return; }
+  if(!sobre){ msg('⚠️ Informe o sobrenome'); return; }
+  if(senha.length<4){ msg('⚠️ Senha mínimo 4 caracteres'); return; }
+  var users = DB.ga('users');
+  if(users.find(function(u){return u.lw&&u.lw.toLowerCase()===lw.toLowerCase();})){ msg('❌ Usuário LDPA já existe'); return; }
+
+  var novo = {lw:lw, nome:nome, sobrenome:sobre, senha:senha, admin:comoAdmin, owner:false, id:Date.now()};
+  users.push(novo);
+  DB.s('users', users);
+  if(SB){
+    SB.from('usuarios').insert({lw:lw,nome:nome,sobrenome:sobre,senha:senha,admin:comoAdmin,owner:false})
+      .then(function(r){ if(r.error) console.warn('Cadastrar usuario Supabase:', r.error.message); })
+      .catch(function(e){ console.warn('Cadastrar usuario Supabase:', e); });
+  }
+  msg('✅ Usuário '+lw+' cadastrado'+(comoAdmin?' como Admin':' como Operador'), true);
+  document.getElementById('adm-nu-lw').value='';
+  document.getElementById('adm-nu-nome').value='';
+  document.getElementById('adm-nu-sobre').value='';
+  document.getElementById('adm-nu-senha').value='';
+  document.getElementById('adm-nu-admin').checked=false;
+  admRenderUsers();
+}
+
+function admRebootApp(){
+  toast('🔄 Reiniciando...');
+  setTimeout(function(){
+    // Cache-busting: garante que sempre carrega a versão mais recente publicada
+    var base = location.href.split('?')[0];
+    location.href = base + '?_r=' + Date.now();
+  }, 400);
 }
 
 function admRenderUsers(){
@@ -2489,11 +2583,15 @@ function admRenderUsers(){
   var el = document.getElementById('adm-users-list');
   if(!el)return;
   el.innerHTML = users.map(function(u){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;background:#F8F9FF;border-radius:7px;padding:8px 10px">'+
-      '<div><div style="font-size:12px;font-weight:700;color:var(--navy)">'+u.nome+' '+u.sobrenome+'</div>'+
-      '<div style="font-size:10px;color:var(--gray)">'+u.lw+'  ·  '+(u.admin?'🔐 Admin':'👷 Operador')+'</div></div>'+
-      '<button onclick="admPromoverUser(&quot;'+u.lw+'&quot;)" style="background:'+(u.admin?'#FFEBEE':'#E8F5E9')+';color:'+(u.admin?'var(--red)':'var(--green)')+';border:none;border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer">'+
-      (u.admin?'→ Operador':'→ Admin')+'</button></div>';
+    var tag = u.owner ? '👑 Dono' : (u.admin?'🔐 Admin':'👷 Operador');
+    var podeExcluir = !u.owner && !(U && U.lw===u.lw);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;background:#F8F9FF;border-radius:7px;padding:8px 10px;gap:6px">'+
+      '<div style="min-width:0"><div style="font-size:12px;font-weight:700;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+u.nome+' '+u.sobrenome+'</div>'+
+      '<div style="font-size:10px;color:var(--gray)">'+u.lw+'  ·  '+tag+'</div></div>'+
+      '<div style="display:flex;gap:4px;flex-shrink:0">'+
+      (u.owner ? '' : '<button onclick="admPromoverUser(&quot;'+u.lw+'&quot;)" style="background:'+(u.admin?'#FFEBEE':'#E8F5E9')+';color:'+(u.admin?'var(--red)':'var(--green)')+';border:none;border-radius:6px;padding:4px 8px;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap">'+(u.admin?'→ Oper.':'→ Admin')+'</button>')+
+      (podeExcluir ? '<button onclick="admExcluirUsuario(&quot;'+u.lw+'&quot;)" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:4px 8px;font-size:9px;font-weight:700;cursor:pointer">🗑️</button>' : '')+
+      '</div></div>';
   }).join('');
 }
 
