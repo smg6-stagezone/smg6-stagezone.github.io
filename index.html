@@ -554,6 +554,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     <div class="ids-tab" id="itab-gay" onclick="idTab('gay')" style="flex:1">🏷️ Gaylord</div>
     <div class="ids-tab" id="itab-sid" onclick="idTab('sid')" style="flex:1">🔍 Sem ID</div>
     <div class="ids-tab" id="itab-devos" onclick="idTab('devos')" style="flex:1">🎫 DEVOS</div>
+    <div class="ids-tab" id="itab-zebra" onclick="idTab('zebra')" style="flex:1">🦓 Zebra</div>
   </div>
 
   <!-- ABA ZONAS -->
@@ -668,6 +669,116 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
   </div>
 
 </div>
+  <!-- ABA ZEBRA — Gerador PDF Zebra ZT430 Plus (SEMID_SMG6 / Gaylord / DEVOS avulso) -->
+  <div id="ids-zebra" style="display:none">
+
+    <div style="background:#1D1D1B;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:24px">🦓</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#FFE600">Gerador PDF · Zebra ZT430 Plus</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.6)">Etiquetas 100×150mm verticais · padrão Mercado Livre</div>
+      </div>
+    </div>
+
+    <!-- SUB-TABS -->
+    <div style="display:flex;gap:5px;margin-bottom:12px">
+      <div id="zt-tab-s" style="flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid var(--navy);background:var(--navy);color:var(--yellow)" onclick="ztTab('s')">SEM ID</div>
+      <div id="zt-tab-g" style="flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid #DDD;color:var(--gray);background:#fff" onclick="ztTab('g')">Gaylord</div>
+      <div id="zt-tab-d" style="flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid #DDD;color:var(--gray);background:#fff" onclick="ztTab('d')">DEVOS</div>
+    </div>
+
+    <!-- SEMID -->
+    <div id="zt-semid">
+      <div style="background:#E8F5E9;border:1px solid #4CAF50;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:#2E7D32;line-height:1.5">
+        📋 Último impresso: <b>SEMID_SMG6_2441</b> · Reimpressão de 60 a partir de <b>2381</b>
+      </div>
+      <div class="scard" style="margin-bottom:10px">
+        <div class="slbl" style="margin-bottom:5px">Operação</div>
+        <select id="zt-s-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none" onchange="ztUpdS()">
+          <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
+          <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
+          <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
+        </select>
+        <div class="slbl" style="margin-bottom:5px">Número inicial</div>
+        <input type="number" id="zt-s-num" value="2381" min="1" class="sinp" style="margin-bottom:10px" oninput="ztUpdS()">
+        <div class="slbl" style="margin-bottom:5px">ID que será gerado</div>
+        <div id="zt-s-prev" style="background:#F0F2F5;border:1.5px solid var(--navy);border-radius:7px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--navy);text-align:center;letter-spacing:.5px;margin-bottom:10px;word-break:break-all">SEMID_SMG6_2381</div>
+        <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="bok" onclick="ztChg('zt-s-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
+          <input id="zt-s-qty" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
+          <button class="bok" onclick="ztChg('zt-s-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
+        </div>
+      </div>
+      <button class="bp" onclick="ztGerarPDF('semid')" id="zt-btn-s">📄 Gerar PDF · SEMID Zebra</button>
+    </div>
+
+    <!-- GAYLORD -->
+    <div id="zt-gaylord" style="display:none">
+      <div style="background:#E8F5E9;border:1px solid #4CAF50;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:#2E7D32;line-height:1.5">
+        📋 Último na planilha: <b>G183_SMG6</b> · Próximo sugerido: <b>G184</b>
+      </div>
+      <div class="scard" style="margin-bottom:10px">
+        <div class="slbl" style="margin-bottom:5px">Operação</div>
+        <select id="zt-g-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none" onchange="ztUpdG()">
+          <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
+          <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
+          <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
+        </select>
+        <div class="slbl" style="margin-bottom:5px">Número inicial</div>
+        <input type="number" id="zt-g-num" value="184" min="1" class="sinp" style="margin-bottom:10px" oninput="ztUpdG()">
+        <div class="slbl" style="margin-bottom:5px">ID que será gerado</div>
+        <div id="zt-g-prev" style="background:#F0F2F5;border:1.5px solid var(--navy);border-radius:7px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--navy);text-align:center;letter-spacing:.5px;margin-bottom:10px;word-break:break-all">G184_SMG6</div>
+        <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="bok" onclick="ztChg('zt-g-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
+          <input id="zt-g-qty" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
+          <button class="bok" onclick="ztChg('zt-g-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
+        </div>
+      </div>
+      <button class="bp" onclick="ztGerarPDF('gaylord')" id="zt-btn-g">📄 Gerar PDF · Gaylord Zebra</button>
+    </div>
+
+    <!-- DEVOS -->
+    <div id="zt-devos" style="display:none">
+      <div style="background:#FFEBEE;border:1px solid #CC0000;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:#B71C1C;line-height:1.5">
+        🎫 Exige chamado aberto (SHP-X) antes de imprimir.
+      </div>
+      <div class="scard" style="margin-bottom:10px">
+        <div class="slbl" style="margin-bottom:5px">Operação</div>
+        <select id="zt-d-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none">
+          <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
+          <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
+          <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
+        </select>
+        <div class="slbl" style="margin-bottom:5px">Nº do Chamado</div>
+        <input type="text" id="zt-d-ch" placeholder="SHP-1" class="sinp" style="margin-bottom:10px">
+        <div class="slbl" style="margin-bottom:5px">Descrição do produto</div>
+        <textarea id="zt-d-desc" placeholder="Ex: bicicleta spinning..." style="width:100%;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:55px;outline:none;margin-bottom:10px"></textarea>
+        <div class="slbl" style="margin-bottom:5px">Nº do Pacote (SEMID)</div>
+        <input type="text" id="zt-d-pac" placeholder="SEMID_SMG6_2381" class="sinp" style="margin-bottom:10px">
+        <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="bok" onclick="ztChg('zt-d-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
+          <input id="zt-d-qty" type="number" value="1" min="1" max="20" class="sinp" style="text-align:center">
+          <button class="bok" onclick="ztChg('zt-d-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
+        </div>
+      </div>
+      <button class="bp" onclick="ztGerarPDF('devos')" id="zt-btn-d">📄 Gerar PDF · DEVOS Zebra</button>
+    </div>
+
+    <div style="background:#FFF3E0;border:1px solid #FF8F00;border-radius:8px;padding:10px 12px;margin-top:14px;font-size:10px;color:#795548;line-height:1.7">
+      <b style="color:#E65100">🦓 Zebra ZT430 Plus — como imprimir:</b><br>
+      1. Toque em <b>Gerar PDF</b> — salva no celular<br>
+      2. Abra no <b>Adobe Acrobat Reader</b><br>
+      3. Imprimir → <b>Zebra ZT430 Plus</b><br>
+      4. Tamanho: <b>"Tamanho real"</b> (não ajustar)<br>
+      5. Orientação: <b>Retrato (Portrait)</b> ✅
+    </div>
+
+  </div>
+
+
 
 <!-- ══ ADMIN ══ -->
 <div class="tela" id="tela-admin">
@@ -1468,7 +1579,7 @@ function ir(t){
 
 // ── IDS TABS ──
 function idTab(tab){
-  ['zones','gay','sid','devos'].forEach(t=>{
+  ['zones','gay','sid','devos','zebra'].forEach(t=>{
     const secEl=document.getElementById('ids-'+t);
     if(secEl)secEl.style.display=t===tab?'block':'none';
     const tabEl=document.getElementById('itab-'+t);
@@ -3344,6 +3455,96 @@ window.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){ try{ gridInit(); }catch(e){} }, 100);
   setTimeout(function(){ try{ expBuildOpts(); }catch(e){} }, 500);
 });
+
+/* ════════════════════════════════════════
+   MÓDULO ZEBRA — Gerador PDF avulso
+   Reusa etiRenderSGCard e etiRenderDevos
+   ════════════════════════════════════════ */
+function ztTab(t){
+  ['s','g','d'].forEach(x=>{
+    const btn=document.getElementById('zt-tab-'+x);
+    const pnl=document.getElementById('zt-'+(x==='s'?'semid':x==='g'?'gaylord':'devos'));
+    const on=x===t;
+    btn.style.background=on?'var(--navy)':'#fff';
+    btn.style.color=on?'var(--yellow)':'var(--gray)';
+    btn.style.borderColor=on?'var(--navy)':'#DDD';
+    if(pnl) pnl.style.display=on?'block':'none';
+  });
+}
+function ztChg(id,d){const e=document.getElementById(id);e.value=Math.max(1,Math.min(100,(parseInt(e.value)||1)+d));}
+function ztUpdS(){
+  const op=document.getElementById('zt-s-op').value;
+  const n=parseInt(document.getElementById('zt-s-num').value)||1;
+  document.getElementById('zt-s-prev').textContent='SEMID_'+op+'_'+n;
+}
+function ztUpdG(){
+  const op=document.getElementById('zt-g-op').value;
+  const n=parseInt(document.getElementById('zt-g-num').value)||1;
+  document.getElementById('zt-g-prev').textContent='G'+n+'_'+op;
+}
+
+async function ztGerarPDF(tipo){
+  const btnId='zt-btn-'+(tipo==='semid'?'s':tipo==='gaylord'?'g':'d');
+  const btn=document.getElementById(btnId);
+  if(btn){btn.textContent='⏳ Gerando PDF...';btn.style.pointerEvents='none';}
+  try{
+    const jsPDFClass=window.jspdf?window.jspdf.jsPDF:null;
+    if(!jsPDFClass){toast('❌ jsPDF não carregou');return;}
+    const pdf=new jsPDFClass({orientation:'portrait',unit:'mm',format:[100,150],compress:true});
+    let ids=[], first=true;
+
+    if(tipo==='semid'){
+      const op=document.getElementById('zt-s-op').value;
+      const start=parseInt(document.getElementById('zt-s-num').value)||1;
+      const qty=Math.min(100,Math.max(1,parseInt(document.getElementById('zt-s-qty').value)||1));
+      for(let i=0;i<qty;i++) ids.push('SEMID_'+op+'_'+(start+i));
+      // Avança o número
+      document.getElementById('zt-s-num').value=start+qty;ztUpdS();
+      for(let i=0;i<ids.length;i++){
+        const cvs=await etiRenderSGCard(ids[i],'semid');
+        if(!first) pdf.addPage([100,150],'portrait');
+        pdf.addImage(cvs.toDataURL('image/jpeg',0.97),'JPEG',0,0,100,150);
+        first=false;
+      }
+      pdf.save('SEMID_SMG6_'+ids[0]+'_ate_'+ids[ids.length-1]+'.pdf');
+      toast('✅ PDF gerado: '+ids.length+' etiqueta(s) SEM ID!');
+
+    } else if(tipo==='gaylord'){
+      const op=document.getElementById('zt-g-op').value;
+      const start=parseInt(document.getElementById('zt-g-num').value)||1;
+      const qty=Math.min(100,Math.max(1,parseInt(document.getElementById('zt-g-qty').value)||1));
+      for(let i=0;i<qty;i++) ids.push('G'+(start+i)+'_'+op);
+      document.getElementById('zt-g-num').value=start+qty;ztUpdG();
+      for(let i=0;i<ids.length;i++){
+        const cvs=await etiRenderSGCard(ids[i],'gaylord');
+        if(!first) pdf.addPage([100,150],'portrait');
+        pdf.addImage(cvs.toDataURL('image/jpeg',0.97),'JPEG',0,0,100,150);
+        first=false;
+      }
+      pdf.save('Gaylord_'+ids[0]+'_ate_'+ids[ids.length-1]+'.pdf');
+      toast('✅ PDF gerado: '+ids.length+' etiqueta(s) Gaylord!');
+
+    } else {
+      const op=document.getElementById('zt-d-op').value;
+      const ch=document.getElementById('zt-d-ch').value.trim()||'SHP-?';
+      const desc=document.getElementById('zt-d-desc').value.trim()||'-';
+      const pac=document.getElementById('zt-d-pac').value.trim()||'-';
+      const qty=Math.min(20,Math.max(1,parseInt(document.getElementById('zt-d-qty').value)||1));
+      for(let i=0;i<qty;i++){
+        const cvs=await etiRenderDevos(op,ch,desc,pac);
+        if(!first) pdf.addPage([100,150],'portrait');
+        pdf.addImage(cvs.toDataURL('image/jpeg',0.97),'JPEG',0,0,100,150);
+        first=false;
+      }
+      pdf.save('DEVOS_'+ch+'_SMG6_'+Date.now()+'.pdf');
+      toast('✅ PDF gerado: '+qty+' etiqueta(s) DEVOS!');
+    }
+  }catch(e){
+    console.error(e);toast('❌ Erro PDF: '+e.message);
+  }finally{
+    if(btn){btn.textContent='📄 Gerar PDF · '+tipo.charAt(0).toUpperCase()+tipo.slice(1)+' Zebra';btn.style.pointerEvents='auto';}
+  }
+}
 </script>
 </body>
 </html>
