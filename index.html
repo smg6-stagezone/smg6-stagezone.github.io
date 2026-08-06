@@ -1169,13 +1169,24 @@ try{
 }catch(e){ console.warn('Criação imediata do cliente Supabase falhou:', e); }
 
 // DB — localStorage é a fonte imediata (sempre funciona, offline inclusive)
+const _lastLocalWrite = {}; // rastreia quando cada chave foi escrita localmente por último
 const DB = {
   g(k){ try{return JSON.parse(localStorage.getItem('smg6_'+k))||null}catch{return null} },
-  s(k,v){ try{localStorage.setItem('smg6_'+k,JSON.stringify(v))}catch(e){} },
+  s(k,v){ _lastLocalWrite[k]=Date.now(); try{localStorage.setItem('smg6_'+k,JSON.stringify(v))}catch(e){} },
   ga(k){ return DB.g(k)||[] },
   push(k,v){ const a=DB.ga(k); a.unshift(v); DB.s(k,a); }
 };
 let U = DB.g('user');
+
+// Só aplica dados vindos do Supabase se não houver uma escrita local MAIS RECENTE que o início da busca
+// (evita que uma sincronização em segundo plano sobrescreva uma exclusão/edição feita enquanto ela rodava)
+function sbAplicarSeMaisRecente(key, valor, buscaIniciouEm){
+  if(_lastLocalWrite[key] && _lastLocalWrite[key] > buscaIniciouEm){
+    console.log('⏭️ Sync de "'+key+'" ignorado — havia edição local mais recente');
+    return;
+  }
+  DB.s(key, valor);
+}
 
 // Inicia Supabase em background — nunca bloqueia a UI
 function gridInit(){
@@ -1227,6 +1238,7 @@ function sbSyncUsers(){
 // Sem isso, cada celular só via os próprios registros — Painel/Devolução ficavam incompletos
 function sbSyncDados(callback){
   if(!SB){ if(callback) callback(); return; }
+  var buscaIniciouEm = Date.now();
   var pendentes = 6;
   function done(){ pendentes--; if(pendentes<=0 && callback) callback(); }
 
@@ -1235,7 +1247,7 @@ function sbSyncDados(callback){
       var arr = r.data.map(function(a){
         return {id:a.pacote_id, gaiola:a.gaiola, cor:a.cor, operador:a.operador, data:a.data, hora:a.hora};
       });
-      DB.s('aloc', arr);
+      sbAplicarSeMaisRecente('aloc', arr, buscaIniciouEm);
     }
     done();
   }).catch(function(e){ console.warn('sync alocacoes:',e); done(); });
@@ -1245,7 +1257,7 @@ function sbSyncDados(callback){
       var arr = r.data.map(function(e){
         return {cod:e.pacote_id, gaylord:e.gaylord_id, operador:e.operador, data:e.data, hora:e.hora};
       });
-      DB.s('descartes', arr);
+      sbAplicarSeMaisRecente('descartes', arr, buscaIniciouEm);
     }
     done();
   }).catch(function(e){ console.warn('sync embalagens:',e); done(); });
@@ -1255,7 +1267,7 @@ function sbSyncDados(callback){
       var arr = r.data.map(function(s){
         return {id:s.sid_id, data:s.data, hora:s.hora, operador:s.operador, verificacoes:s.verificacoes||0, ultima_verif:s.ultima_verif};
       });
-      DB.s('sids', arr);
+      sbAplicarSeMaisRecente('sids', arr, buscaIniciouEm);
     }
     done();
   }).catch(function(e){ console.warn('sync sids:',e); done(); });
@@ -1265,7 +1277,7 @@ function sbSyncDados(callback){
       var arr = r.data.map(function(g){
         return {id:g.gay_id, data:g.data, operador:g.operador};
       });
-      DB.s('gaylords', arr);
+      sbAplicarSeMaisRecente('gaylords', arr, buscaIniciouEm);
     }
     done();
   }).catch(function(e){ console.warn('sync gaylords:',e); done(); });
@@ -1277,7 +1289,7 @@ function sbSyncDados(callback){
         if(typeof gaiolas === 'string'){ try{ gaiolas = JSON.parse(gaiolas); }catch(e){ gaiolas=[gaiolas]; } }
         return {gaiolas:gaiolas, operador:d.operador, data:d.data, hora:d.hora};
       });
-      DB.s('devol', arr);
+      sbAplicarSeMaisRecente('devol', arr, buscaIniciouEm);
     }
     done();
   }).catch(function(e){ console.warn('sync devol:',e); done(); });
@@ -1287,7 +1299,7 @@ function sbSyncDados(callback){
       var arr = r.data.map(function(h){
         return {id:h.hu_id, data:h.data, operador:h.operador};
       });
-      DB.s('hus', arr);
+      sbAplicarSeMaisRecente('hus', arr, buscaIniciouEm);
     }
     done();
   }).catch(function(e){ console.warn('sync hus:',e); done(); });
@@ -2845,7 +2857,7 @@ function admRenderUndoLists(){
     return '<div class="reg"><div><div class="rc">'+r.id+'</div><div class="ri">'+r.operador+' · '+r.hora+'</div></div>'+
       '<div style="display:flex;align-items:center;gap:6px">'+
       '<span class="gbadge" style="background:'+r.cor+'">'+r.gaiola+'</span>'+
-      '<button onclick="admDesfazerAloc('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button>'+
+      '<button onclick="admDesfazerAloc('+i+',this)" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button>'+
       '</div></div>';
   }).join('') : '<div class="empty"><div class="ic">📦</div>Nenhuma alocação ainda</div>';
 
@@ -2853,116 +2865,152 @@ function admRenderUndoLists(){
   var emb = DB.ga('descartes').slice(0,12);
   document.getElementById('adm-list-emb').innerHTML = emb.length ? emb.map(function(r,i){
     return '<div class="reg"><div><div class="rc">'+r.cod+'</div><div class="ri">'+r.operador+' · '+r.hora+' · '+r.gaylord+'</div></div>'+
-      '<button onclick="admDesfazerEmb('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+      '<button onclick="admDesfazerEmb('+i+',this)" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
   }).join('') : '<div class="empty"><div class="ic">📥</div>Nenhuma embalagem ainda</div>';
 
   // SIDs
   var sids = DB.ga('sids').slice(0,10);
   document.getElementById('adm-list-sid').innerHTML = sids.length ? sids.map(function(s,i){
     return '<div class="reg"><div><div class="rc">'+s.id+'</div><div class="ri">'+s.operador+' · '+s.data+' · 🔍'+s.verificacoes+'x</div></div>'+
-      '<button onclick="admDesfazerSID('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+      '<button onclick="admDesfazerSID('+i+',this)" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
   }).join('') : '<div class="empty"><div class="ic">🔍</div>Nenhuma etiqueta ainda</div>';
 
   // Gaylords
   var gays = DB.ga('gaylords').slice(0,10);
   document.getElementById('adm-list-gay').innerHTML = gays.length ? gays.map(function(g,i){
     return '<div class="reg"><div><div class="rc">'+g.id+'</div><div class="ri">'+g.operador+' · '+g.data+'</div></div>'+
-      '<button onclick="admDesfazerGay('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+      '<button onclick="admDesfazerGay('+i+',this)" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
   }).join('') : '<div class="empty"><div class="ic">🏷️</div>Nenhum gaylord ainda</div>';
 
   // Devoluções
   var devol = DB.ga('devol').slice(0,10);
   document.getElementById('adm-list-devol').innerHTML = devol.length ? devol.map(function(d,i){
     return '<div class="reg"><div><div class="rc">'+d.gaiolas.join(', ')+'</div><div class="ri">'+d.operador+' · '+d.hora+'</div></div>'+
-      '<button onclick="admDesfazerDevol('+i+')" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
+      '<button onclick="admDesfazerDevol('+i+',this)" style="background:#FFEBEE;color:var(--red);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Desfazer</button></div>';
   }).join('') : '<div class="empty"><div class="ic">📤</div>Nenhuma montagem ainda</div>';
 
   // HUs
   var hus = DB.ga('hus').slice(0,10);
   document.getElementById('adm-list-hu').innerHTML = hus.length ? hus.map(function(h,i){
     return '<div class="reg"><div><div class="rc">'+h.id+'</div><div class="ri">'+h.operador+' · '+h.data+'</div></div>'+
-      '<button onclick="admReabrirHU('+i+')" style="background:#FFF3E0;color:var(--ps);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Reabrir</button></div>';
+      '<button onclick="admReabrirHU('+i+',this)" style="background:#FFF3E0;color:var(--ps);border:none;border-radius:6px;padding:5px 9px;font-size:10px;font-weight:700;cursor:pointer">↩️ Reabrir</button></div>';
   }).join('') : '<div class="empty"><div class="ic">🚚</div>Nenhum HU fechado ainda</div>';
 }
 
-function admDesfazerAloc(idx){
+// ── Helper genérico: mostra carregamento no botão durante a operação ──
+function admBtnLoading(btn, texto){
+  if(!btn) return null;
+  var original = btn.innerHTML;
+  btn.innerHTML = texto || '⏳...';
+  btn.style.pointerEvents = 'none';
+  btn.style.opacity = '.6';
+  return original;
+}
+
+async function admDesfazerAloc(idx, btn){
   var arr = DB.ga('aloc');
   var item = arr[idx];
   if(!item) return;
   if(!confirm('Desfazer alocação de '+item.id+' na gaiola '+item.gaiola+'?')) return;
-  arr.splice(idx,1);
-  DB.s('aloc', arr);
-  // Tenta remover no Supabase pelo conjunto de campos (match preciso)
+  admBtnLoading(btn, '⏳ Desfazendo...');
+  // 1º remove no Supabase (fonte da verdade) e SÓ DEPOIS atualiza local — evita que uma sincronização
+  // em segundo plano traga o registro de volta antes da exclusão terminar
   if(SB){
-    SB.from('alocacoes').delete()
-      .eq('pacote_id', item.id).eq('gaiola', item.gaiola).eq('hora', item.hora).eq('operador', item.operador)
-      .catch(function(e){ console.warn('Desfazer aloc Supabase:', e); });
+    try{
+      await SB.from('alocacoes').delete()
+        .eq('pacote_id', item.id).eq('gaiola', item.gaiola).eq('hora', item.hora).eq('operador', item.operador);
+    }catch(e){ console.warn('Desfazer aloc Supabase:', e); }
   }
+  arr = DB.ga('aloc'); // relê pra não perder mudanças concorrentes
+  var idxAtual = arr.findIndex(function(a){return a.id===item.id&&a.gaiola===item.gaiola&&a.hora===item.hora&&a.operador===item.operador;});
+  if(idxAtual>=0) arr.splice(idxAtual,1);
+  DB.s('aloc', arr);
   toast('✅ Alocação de '+item.id+' desfeita');
   admRenderUndoLists();
 }
-function admDesfazerEmb(idx){
+
+async function admDesfazerEmb(idx, btn){
   var arr = DB.ga('descartes');
   var item = arr[idx];
   if(!item) return;
   if(!confirm('Desfazer embalagem '+item.cod+' do '+item.gaylord+'?')) return;
-  arr.splice(idx,1);
-  DB.s('descartes', arr);
+  admBtnLoading(btn, '⏳ Desfazendo...');
   if(SB){
-    SB.from('embalagens').delete()
-      .eq('pacote_id', item.cod).eq('gaylord_id', item.gaylord).eq('hora', item.hora)
-      .catch(function(e){ console.warn('Desfazer emb Supabase:', e); });
+    try{
+      await SB.from('embalagens').delete()
+        .eq('pacote_id', item.cod).eq('gaylord_id', item.gaylord).eq('hora', item.hora);
+    }catch(e){ console.warn('Desfazer emb Supabase:', e); }
   }
+  arr = DB.ga('descartes');
+  var idxAtual = arr.findIndex(function(d){return d.cod===item.cod&&d.gaylord===item.gaylord&&d.hora===item.hora;});
+  if(idxAtual>=0) arr.splice(idxAtual,1);
+  DB.s('descartes', arr);
   toast('✅ Embalagem '+item.cod+' desfeita');
   admRenderUndoLists();
 }
-function admDesfazerSID(idx){
+
+async function admDesfazerSID(idx, btn){
   var arr = DB.ga('sids');
   var item = arr[idx];
   if(!item) return;
   if(!confirm('Apagar etiqueta '+item.id+'? (irreversível)')) return;
-  arr.splice(idx,1);
+  admBtnLoading(btn, '⏳ Apagando...');
+  if(SB){
+    try{ await SB.from('sids').delete().eq('sid_id', item.id); }catch(e){ console.warn(e); }
+  }
+  arr = DB.ga('sids').filter(function(s){return s.id!==item.id;});
   DB.s('sids', arr);
-  if(SB) SB.from('sids').delete().eq('sid_id', item.id).catch(function(e){ console.warn(e); });
   toast('✅ '+item.id+' apagado');
   admRenderUndoLists();
 }
-function admDesfazerGay(idx){
+
+async function admDesfazerGay(idx, btn){
   var arr = DB.ga('gaylords');
   var item = arr[idx];
   if(!item) return;
   var usados = DB.ga('descartes').filter(function(d){ return d.gaylord===item.id; }).length;
-  if(usados>0 && !confirm('Este gaylord tem '+usados+' embalagem(ns) registrada(s). Apagar mesmo assim?')) return;
-  if(usados===0 && !confirm('Apagar gaylord '+item.id+'?')) return;
-  arr.splice(idx,1);
+  var pergunta = usados>0
+    ? ('Este gaylord tem '+usados+' embalagem(ns) registrada(s). Apagar mesmo assim?')
+    : ('Apagar gaylord '+item.id+'?');
+  if(!confirm(pergunta)) return;
+  admBtnLoading(btn, '⏳ Apagando...');
+  if(SB){
+    try{ await SB.from('gaylords').delete().eq('gay_id', item.id); }catch(e){ console.warn(e); }
+  }
+  arr = DB.ga('gaylords').filter(function(g){return g.id!==item.id;});
   DB.s('gaylords', arr);
-  if(SB) SB.from('gaylords').delete().eq('gay_id', item.id).catch(function(e){ console.warn(e); });
   toast('✅ '+item.id+' apagado');
   admRenderUndoLists();
 }
-function admDesfazerDevol(idx){
+
+async function admDesfazerDevol(idx, btn){
   var arr = DB.ga('devol');
   var item = arr[idx];
   if(!item) return;
   if(!confirm('Remover registro da montagem ('+item.gaiolas.join(', ')+')? Os pacotes não voltam automaticamente.')) return;
-  arr.splice(idx,1);
-  DB.s('devol', arr);
+  admBtnLoading(btn, '⏳ Removendo...');
   if(SB){
-    SB.from('devol').delete()
-      .eq('operador', item.operador).eq('hora', item.hora)
-      .catch(function(e){ console.warn(e); });
+    try{ await SB.from('devol').delete().eq('operador', item.operador).eq('hora', item.hora); }catch(e){ console.warn(e); }
   }
+  arr = DB.ga('devol');
+  var idxAtual = arr.findIndex(function(d){return d.operador===item.operador&&d.hora===item.hora;});
+  if(idxAtual>=0) arr.splice(idxAtual,1);
+  DB.s('devol', arr);
   toast('✅ Registro de devolução removido');
   admRenderUndoLists();
 }
-function admReabrirHU(idx){
+
+async function admReabrirHU(idx, btn){
   var arr = DB.ga('hus');
   var item = arr[idx];
   if(!item) return;
   if(!confirm('Reabrir '+item.id+'? Isso permite adicionar mais pacotes a ele.')) return;
-  arr.splice(idx,1);
+  admBtnLoading(btn, '⏳ Reabrindo...');
+  if(SB){
+    try{ await SB.from('hus').delete().eq('hu_id', item.id); }catch(e){ console.warn(e); }
+  }
+  arr = DB.ga('hus').filter(function(h){return h.id!==item.id;});
   DB.s('hus', arr);
-  if(SB) SB.from('hus').delete().eq('hu_id', item.id).catch(function(e){ console.warn(e); });
   toast('✅ '+item.id+' reaberto — disponível na Expedição HU');
   admRenderUndoLists();
   try{ rExp(); }catch(e){}
