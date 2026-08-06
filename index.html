@@ -401,8 +401,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       <div class="cm-d">Mapa das gaiolas em uso</div>
     </div>
     <div class="cm" onclick="ir('descarte')">
-      <div class="cm-ic">🗑️</div><div class="cm-n">Embalagem Gaylord</div>
-      <div class="cm-d">Registrar embalagem no Gaylord ativo</div>
+      <div class="cm-ic">🗑️</div><div class="cm-n">Destruição</div>
+      <div class="cm-d">Pacotes sem ID não resolvidos · Gaylord ativo</div>
     </div>
     <div class="cm" onclick="ir('expedicao')" style="border-color:var(--fin)">
       <div class="cm-ic">🚚</div><div class="cm-n">Expedição HU</div>
@@ -530,7 +530,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 
 <!-- ══ DESCARTE ══ -->
 <div class="tela" id="tela-descarte">
-  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Embalagem Gaylord</h2></div>
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>🗑️ Destruição</h2></div>
   <div style="background:var(--navy);border-radius:11px;padding:13px 16px;margin-bottom:12px;text-align:center">
     <div style="font-size:11px;color:#8BA3CC">Gaylord ativo</div>
     <div style="font-size:28px;font-weight:900;color:var(--yellow);letter-spacing:2px" id="d-gn">GAY-000001</div>
@@ -567,11 +567,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     <div class="etiq">
       <div class="etiq-topo" style="background:#37474F">
         <div class="etiq-id" id="g-id">GAY-000001</div>
-        <div class="etiq-sub">_GAYLORD DESCARTE</div>
+        <div class="etiq-sub">_GAYLORD DESTRUIÇÃO</div>
       </div>
       <div class="etiq-body">
         <div class="etiq-info">
-          <div class="etiq-nome">GAYLORD DE DESCARTE · SMG6</div>
+          <div class="etiq-nome">GAYLORD DESTRUIÇÃO · SMG6</div>
           <div class="etiq-det" id="g-dt">📅 —</div>
           <div class="etiq-det" id="g-op">👤 —</div>
           <div class="etiq-det" id="g-qt">📦 0 itens</div>
@@ -580,7 +580,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       </div>
     </div>
     <button class="bp" onclick="gerarGay()">➕ Gerar Novo Gaylord</button>
-    <button class="bp2" onclick="toast('🖨️ Enviando para Zebra...')">🖨️ Imprimir</button>
+    <button class="bp2" id="gay-imp-btn" onclick="imprimirGaylordsPDF()">📄 Gerar PDF · Zebra 100×150mm</button>
     <div class="slbl-sec">Histórico</div>
     <div class="lista" id="g-lista"><div class="empty"><div class="ic">🏷️</div>Nenhum gaylord</div></div>
   </div>
@@ -936,6 +936,20 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     </div>
   </div>
 
+  <!-- FECHAR HU -->
+  <div class="exp-section">
+    <div class="exp-title">✅ Finalizar HU</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Fecha o HU atual (registra no histórico) e libera o número seguinte pro próximo lote.</div>
+    <button class="bp" onclick="fecharHU()" style="background:#00A650">✅ Fechar HU e Começar Novo</button>
+  </div>
+
+  <!-- ETIQUETA DA HU -->
+  <div class="exp-section">
+    <div class="exp-title">🏷️ Etiqueta da HU</div>
+    <div style="font-size:11px;color:var(--gray);margin-bottom:10px">Gera a etiqueta física pra colar no volume/palete antes de expedir.</div>
+    <button class="bp2" id="hu-imp-btn" onclick="imprimirHUsPDF()">📄 Gerar PDF · Zebra 100×150mm</button>
+  </div>
+
   <!-- HUs fechados -->
   <div class="slbl-sec">HUs Expedidos</div>
   <div class="lista" id="e-hus"><div class="empty"><div class="ic">📦</div>Nenhum HU expedido</div></div>
@@ -992,7 +1006,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     <div style="border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
       <div style="background:#37474F;padding:10px 14px;display:flex;align-items:center;gap:8px">
         <span style="font-size:20px">📥</span>
-        <span style="font-size:13px;font-weight:700;color:#fff">Embalagem Gaylord</span>
+        <span style="font-size:13px;font-weight:700;color:#fff">Destruição</span>
       </div>
       <div style="padding:12px 14px;font-size:12px;color:#333;line-height:1.9">
         1️⃣ Veja qual <b>Gaylord está ativo</b> (mostrado no topo)<br>
@@ -1445,6 +1459,11 @@ function ir(t){
   window.scrollTo(0,0);
   const fn={dash:rDash,alocar:rAlocar,painel:rPainel,devol:rDevol,ps:rPS,descarte:rDescarte,ids:rIds,expedicao:rExp,salvados:function(){},admin:rAdmin};
   if(fn[t])fn[t]();
+  // Telas que mostram dados de TODOS os operadores — sincroniza ao entrar, pra sempre ver o mais atual
+  const telasCompartilhadas = ['painel','ids','admin','devol','expedicao'];
+  if(SB && telasCompartilhadas.includes(t)){
+    sbSyncDados(function(){ if(fn[t]) fn[t](); });
+  }
 }
 
 // ── IDS TABS ──
@@ -1469,7 +1488,7 @@ function rDash(){
   const hoje=new Date().toLocaleDateString('pt-BR');
   document.getElementById('b-sz').textContent=DB.ga('aloc').filter(r=>r.data===hoje).length+' hoje';
   // PS removido do app
-  document.getElementById('b-exp').textContent=(DB.ga('exp-hus').length||EXP_HUS.length)+' HUs';
+  document.getElementById('b-exp').textContent=DB.ga('hus').length+' HUs';
 }
 
 // ── ALOCAR ──
@@ -1907,6 +1926,56 @@ function gerarSID(){
 
 // Gera um PDF de verdade (100x150mm por etiqueta) — pra baixar e imprimir depois,
 // sem depender do diálogo de impressão direto do navegador
+async function imprimirHUsPDF(){
+  var hus = DB.ga('hus');
+  if(!hus.length){ toast('⚠️ Nenhum HU fechado ainda'); return; }
+  var btn = document.getElementById('hu-imp-btn');
+  var original = btn ? btn.innerHTML : null;
+  if(btn){ btn.innerHTML='⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
+  try{
+    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
+    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
+    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
+    for(var i=0; i<hus.length; i++){
+      var canvas = await etiRenderSGCard(hus[i].id, 'hu');
+      if(i>0) pdf.addPage([100,150],'portrait');
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
+    }
+    pdf.save('Etiquetas_HU_SMG6_'+Date.now()+'.pdf');
+    toast('✅ PDF gerado com '+hus.length+' etiqueta(s)!');
+  }catch(e){
+    console.error(e);
+    toast('❌ Erro ao gerar PDF: '+e.message);
+  }finally{
+    if(btn && original){ btn.innerHTML=original; btn.style.pointerEvents='auto'; }
+  }
+}
+
+async function imprimirGaylordsPDF(){
+  var gays = DB.ga('gaylords');
+  if(!gays.length){ toast('⚠️ Nenhum gaylord gerado ainda'); return; }
+  var btn = document.getElementById('gay-imp-btn');
+  var original = btn ? btn.innerHTML : null;
+  if(btn){ btn.innerHTML='⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
+  try{
+    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
+    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
+    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
+    for(var i=0; i<gays.length; i++){
+      var canvas = await etiRenderSGCard(gays[i].id, 'gaylord');
+      if(i>0) pdf.addPage([100,150],'portrait');
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
+    }
+    pdf.save('Etiquetas_Gaylord_SMG6_'+Date.now()+'.pdf');
+    toast('✅ PDF gerado com '+gays.length+' etiqueta(s)!');
+  }catch(e){
+    console.error(e);
+    toast('❌ Erro ao gerar PDF: '+e.message);
+  }finally{
+    if(btn && original){ btn.innerHTML=original; btn.style.pointerEvents='auto'; }
+  }
+}
+
 async function imprimirSIDsPDF(){
   var sids = DB.ga('sids');
   if(!sids.length){ toast('⚠️ Nenhuma etiqueta gerada ainda'); return; }
@@ -1921,7 +1990,7 @@ async function imprimirSIDsPDF(){
 
     for(var i=0; i<sids.length; i++){
       var s = sids[i];
-      var canvas = await renderSIDLabelCanvas(s);
+      var canvas = await etiRenderSGCard(s.id, 'semid');
       if(i>0) pdf.addPage([100,150],'portrait');
       pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
     }
@@ -2169,12 +2238,31 @@ function expEmail(){
   const body=`Prezados,\n\nEncaminhamos pacotes Finalizador para geração da Etiqueta 2.0.\n\nHU: ${h.numHU}\nData: ${dt}\nOrigem: ${h.orig}\nDestino: ${h.dest}\nTotal: ${EXP_PKGS.length} pacotes\n\n${EXP_PKGS.map((p,i)=>`${String(i+1).padStart(2,'0')}. ${p.shipmentId} | ${p.motivo||'—'}`).join('\n')}\n\nAtenciosamente,\nEquipe SMG6 — Uberlândia`;
   window.open('https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(EXP_EMAILS.join(','))+'&su='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body),'_blank');
 }
+async function fecharHU(){
+  const h = expGetH();
+  if(!EXP_PKGS.length){ toast('⚠️ Nenhum pacote no HU pra fechar'); return; }
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const registro = {id:h.numHU, data:hoje, operador:U.nome, total_pacotes:EXP_PKGS.length};
+  DB.push('hus', registro);
+  sbInsert('hus',{hu_id:h.numHU, data:hoje, operador:U.nome, operador_lw:U.lw||'', total_pacotes:EXP_PKGS.length});
+  toast('✅ '+h.numHU+' fechado com '+EXP_PKGS.length+' pacote(s)!');
+  // Reseta pro próximo HU
+  EXP_PKGS = []; EXP_PID = 0;
+  const proxNum = parseInt((h.numHU.match(/(\d+)$/)||[0,0])[1])+1;
+  const novoNum = h.numHU.replace(/\d+$/, String(proxNum).padStart(h.numHU.match(/(\d+)$/)?.[1]?.length||3,'0'));
+  const numInp = document.getElementById('e-num');
+  if(numInp) numInp.value = novoNum;
+  expRenderTable();
+  try{ rExp(); }catch(e){}
+}
+
 async function expTudo(){if(!EXP_PKGS.length){toast('⚠️ Nenhum pacote');return}await expSB();expXLSX();setTimeout(expCSV,400);setTimeout(expEmail,800)}
 function rExp(){expRenderTable();expRenderHUs()}
 function expRenderHUs(){
   const l=document.getElementById('e-hus');
-  if(!EXP_HUS.length){l.innerHTML='<div class="empty"><div class="ic">📦</div>Nenhum HU expedido</div>';return}
-  l.innerHTML=EXP_HUS.map(h=>`<div class="reg"><div><div class="rc">${h.id}</div><div class="ri">${h.operador} · ${h.data} · ${h.qt} pcts</div></div><span class="gbadge" style="background:var(--green)">✅</span></div>`).join('');
+  const hus = DB.ga('hus');
+  if(!hus.length){l.innerHTML='<div class="empty"><div class="ic">📦</div>Nenhum HU expedido</div>';return}
+  l.innerHTML=hus.map(h=>`<div class="reg"><div><div class="rc">${h.id}</div><div class="ri">${h.operador} · ${h.data} · ${h.total_pacotes||0} pcts</div></div><span class="gbadge" style="background:var(--green)">✅</span></div>`).join('');
 }
 
 
@@ -2306,6 +2394,9 @@ function etiQrPromise(text,size){
 
 async function etiRenderSGCard(id,tipo){
   const isG=tipo==='gaylord';
+  const isHU=tipo==='hu';
+  const corAcento = isHU ? '#3483FA' : '#FFE600';
+  const tituloTxto = isHU ? 'UNIDADE HU - EXPEDIÇÃO' : (isG?'ID da GAYLORD - SALVADOS':'PACOTES SEM ID - SALVADOS');
   const cvs=document.createElement('canvas');cvs.width=ETI_W;cvs.height=ETI_H;
   const ctx=cvs.getContext('2d');const QH=ETI_QR_H();let y=0;
   ctx.fillStyle='#fff';ctx.fillRect(0,y,ETI_W,ETI_LOGO_H);
@@ -2316,12 +2407,12 @@ async function etiRenderSGCard(id,tipo){
   ctx.strokeStyle='#ccc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,ETI_LOGO_H);ctx.lineTo(ETI_W,ETI_LOGO_H);ctx.stroke();
   y+=ETI_LOGO_H;
   ctx.fillStyle='#000';ctx.fillRect(0,y,ETI_W,ETI_TITLE_H);
-  ctx.fillStyle=isG?'#FFE600':'#fff';ctx.font=`bold ${etiPx(8)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(isG?'ID da GAYLORD - SALVADOS':'PACOTES SEM ID - SALVADOS',ETI_W/2,y+ETI_TITLE_H/2);
+  ctx.fillStyle=(isG||isHU)?corAcento:'#fff';ctx.font=`bold ${etiPx(8)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(tituloTxto,ETI_W/2,y+ETI_TITLE_H/2);
   y+=ETI_TITLE_H;
   ctx.fillStyle='#222';ctx.fillRect(0,y,ETI_W,ETI_SEP_H);y+=ETI_SEP_H;
   ctx.fillStyle='#000';ctx.fillRect(0,y,ETI_W,ETI_ID_H);
-  ctx.fillStyle=isG?'#FFE600':'#fff';ctx.font=`900 ${etiPx(11)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=(isG||isHU)?corAcento:'#fff';ctx.font=`900 ${etiPx(11)}px Arial`;ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(id,ETI_W/2,y+ETI_ID_H/2);y+=ETI_ID_H;
   ctx.fillStyle='#fff';ctx.fillRect(0,y,ETI_W,ETI_GAP_H);y+=ETI_GAP_H;
   ctx.fillStyle='#fff';ctx.fillRect(0,y,ETI_W,QH);
@@ -2613,7 +2704,7 @@ async function salvImprimir(){
     var lista = Array.from(cards);
     for(var i=0; i<lista.length; i++){
       var c = lista[i];
-      var canvas = await renderDEVOSLabelCanvas(c.dataset.op, c.dataset.chamado, c.dataset.desc, c.dataset.pacote);
+      var canvas = await etiRenderDevos(c.dataset.op, c.dataset.chamado, c.dataset.desc, c.dataset.pacote);
       if(i>0) pdf.addPage([100,150],'portrait');
       pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
     }
@@ -2851,7 +2942,7 @@ function admRenderStats(){
     {label:'Total SIDs', val: DB.ga('sids').length},
     {label:'Total Gaylords', val: DB.ga('gaylords').length},
     {label:'Usuários', val: DB.ga('users').length},
-    {label:'HUs expedidos', val: DB.ga('exp-hus').length},
+    {label:'HUs expedidos', val: DB.ga('hus').length},
   ];
   el.innerHTML = stats.map(function(s){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#F8F9FF;border-radius:6px">'+
