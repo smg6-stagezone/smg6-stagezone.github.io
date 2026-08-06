@@ -559,7 +559,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
   <!-- ABA ZONAS -->
   <div id="ids-zones">
     <div id="ids-lista"></div>
-    <button class="bp" style="margin-top:8px" onclick="idsPrintTodas()">🖨️ Imprimir Todas as Plaquinhas</button>
+    <button class="bp" style="margin-top:8px" onclick="idsPrintTodas()">📄 Gerar PDF de Todas as Plaquinhas</button>
   </div>
 
   <!-- ABA GAYLORD -->
@@ -603,14 +603,28 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
         <div class="etiq-qr" id="s-qr"></div>
       </div>
     </div>
-    <button class="bp" onclick="gerarSID()">➕ Gerar Nova Etiqueta SID</button>
+
+    <div class="scard" style="margin-bottom:10px">
+      <div class="slbl" style="margin-bottom:5px">📅 Data da etiqueta</div>
+      <div style="font-size:10px;color:var(--gray);margin-bottom:6px">Use uma data futura pra pré-imprimir etiquetas com antecedência</div>
+      <input type="date" id="s-data-gerar" class="sinp" style="margin-bottom:10px">
+      <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="bok" onclick="sidQtyChg(-1)" style="padding:10px 16px;font-size:16px">−</button>
+        <input id="s-qtd-gerar" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
+        <button class="bok" onclick="sidQtyChg(1)" style="padding:10px 16px;font-size:16px">+</button>
+      </div>
+    </div>
+
+    <button class="bp" onclick="gerarSID()">➕ Gerar Etiqueta(s) SID</button>
     <div class="div"></div>
     <div class="slbl">🔍 Verificar etiqueta (scan QR ou digitar)</div>
     <div class="srow" style="margin-bottom:12px">
       <input class="sinp" id="sv-inp" placeholder="SID-000001..." onkeydown="if(event.key==='Enter')verificarSID()">
       <button class="bok" onclick="verificarSID()">✓</button>
     </div>
-    <button class="bp2" onclick="toast('🖨️ Enviando para Zebra...')">🖨️ Imprimir</button>
+    <button class="bp2" onclick="imprimirSIDsPDF()">📄 Gerar PDF pra Imprimir</button>
+    <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:center">Baixa um PDF com as etiquetas geradas — imprime quando quiser, sem enviar direto pra impressora</div>
     <div class="slbl-sec">Etiquetas geradas</div>
     <div class="lista" id="s-lista"><div class="empty"><div class="ic">🔍</div>Nenhuma etiqueta</div></div>
   </div>
@@ -639,17 +653,17 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       </div>
     </div>
     <button class="bp" onclick="salvGerar()" style="margin-bottom:8px">▶ Gerar Etiquetas DEVOS</button>
-    <button class="bp2" id="salv-imp-btn" onclick="salvImprimir()">🖨️ Imprimir · Zebra 100×150mm</button>
+    <button class="bp2" id="salv-imp-btn" onclick="salvImprimir()">📄 Gerar PDF · Zebra 100×150mm</button>
     <div class="slbl-sec">Pré-visualização</div>
     <div id="salv-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
       <div style="color:var(--gray);font-size:12px;padding:20px;text-align:center;width:100%">🏷️ Clique em Gerar para visualizar</div>
     </div>
     <div style="background:#FFF3E0;border:1px solid #FF8F00;border-radius:8px;padding:12px;margin-top:14px;font-size:11px;color:#795548;line-height:1.8">
       <b style="color:#E65100">🦓 Como imprimir na Zebra ZT430 Plus:</b><br>
-      1. Clique em <b>Imprimir</b> — abrirá uma nova janela<br>
-      2. No diálogo, selecione a <b>Zebra ZT430 Plus</b><br>
-      3. Papel: <b>100mm × 150mm</b> · Margens: <b>Nenhuma</b> · Escala: <b>100%</b><br>
-      4. ✅ Imprimir
+      1. Clique em <b>Gerar PDF</b> — baixa o arquivo no celular/computador<br>
+      2. Abra o PDF e imprima quando quiser<br>
+      3. Na impressão, selecione a <b>Zebra ZT430 Plus</b><br>
+      4. Papel: <b>100mm × 150mm</b> · Margens: <b>Nenhuma</b> · Escala: <b>100%</b>
     </div>
   </div>
 
@@ -1725,7 +1739,7 @@ function rIds(){
     return '<div style="background:#fff;border-radius:11px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'+
       '<div style="background:'+z.cor+';padding:12px 14px;display:flex;align-items:center;justify-content:space-between">'+
         '<div style="color:#fff;font-weight:900;font-size:15px">'+z.nome+'</div>'+
-        '<button onclick="idsPrintZona(\''+z.key+'\')" style="background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>'+
+        '<button onclick="idsPrintZona(\''+z.key+'\')" style="background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>'+
       '</div>'+
       '<div style="padding:12px 14px">'+
         '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0F0">'+statusList+'</div>'+
@@ -1749,55 +1763,93 @@ function idsPrintTodas(){
   ZONAS.forEach(function(z){ z.ids.forEach(function(id){ todas.push({id:id, zona:z}); }); });
   idsImprimirPlaquinhas(todas);
 }
-async function idsImprimirPlaquinhas(lista){
-  if(!lista.length){ toast('⚠️ Nenhuma gaiola para imprimir'); return; }
-  toast('⏳ Gerando QR codes...');
-  // Gera o QR (só o ID da gaiola) de cada item antes de montar a página
-  var qrSrcs = {};
-  for(var qi=0; qi<lista.length; qi++){
-    var img = await etiQrPromise(lista[qi].id, 200);
-    qrSrcs[qi] = img ? img.src : '';
+async function renderPlaquinhaCanvas(item){
+  var DPI = 300/25.4; // 300dpi pra ficar nítido em A4
+  var W = Math.round(210*DPI), H = Math.round(297*DPI); // A4
+  var cvs = document.createElement('canvas'); cvs.width=W; cvs.height=H;
+  var ctx = cvs.getContext('2d');
+  function mm(v){ return Math.round(v*DPI); }
+
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  var z = item.zona;
+  var placaW = mm(182), placaH = mm(240);
+  var px = (W-placaW)/2, py = (H-placaH)/2;
+
+  // borda da placa
+  ctx.strokeStyle='#111'; ctx.lineWidth=mm(1.6);
+  ctx.strokeRect(px,py,placaW,placaH);
+
+  // topo colorido
+  var topoH = mm(70);
+  ctx.fillStyle=z.cor; ctx.fillRect(px,py,placaW,topoH);
+  ctx.fillStyle='#111';
+  var fontSize = z.nome.length<=6?24:z.nome.length<=9?17:12;
+  ctx.font='900 '+mm(fontSize)+'px Arial'; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText(z.nome.toUpperCase(), px+mm(8), py+topoH-mm(18));
+  ctx.font='bold '+mm(7.5)+'px Arial'; ctx.globalAlpha=.65;
+  ctx.fillText('_'+item.id, px+mm(8), py+topoH-mm(6));
+  ctx.globalAlpha=1;
+
+  // corpo branco
+  var cy = py+topoH+mm(10);
+  ctx.strokeStyle='#111'; ctx.lineWidth=mm(1); ctx.beginPath();
+  ctx.moveTo(px,py+topoH); ctx.lineTo(px+placaW,py+topoH); ctx.stroke();
+
+  ctx.fillStyle='#555'; ctx.font='bold '+mm(4)+'px Arial';
+  ctx.fillText(z.nome.toUpperCase(), px+mm(8), cy);
+  cy += mm(3);
+  ctx.strokeStyle='#EEE'; ctx.lineWidth=mm(.5); ctx.beginPath();
+  ctx.moveTo(px+mm(8),cy); ctx.lineTo(px+placaW-mm(8),cy); ctx.stroke();
+  cy += mm(9);
+
+  z.status.forEach(function(s){
+    ctx.fillStyle=z.cor; ctx.beginPath(); ctx.arc(px+mm(11),cy-mm(1.5),mm(1.6),0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#111'; ctx.font=mm(4.3)+'px Arial'; ctx.textAlign='left';
+    ctx.fillText(s, px+mm(17), cy);
+    cy += mm(9);
+  });
+
+  cy += mm(2);
+  ctx.font='bold '+mm(3.4)+'px Arial';
+  var slaW = ctx.measureText(z.sla).width + mm(10);
+  ctx.fillStyle=z.cor;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px+mm(8),cy-mm(4.5),slaW,mm(8),mm(4)) : ctx.rect(px+mm(8),cy-mm(4.5),slaW,mm(8));
+  ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.fillText(z.sla, px+mm(13), cy+mm(1));
+
+  // QR no canto inferior direito
+  var qrSize = mm(26);
+  var qrImg = await etiQrPromise(item.id, 300);
+  if(qrImg){
+    var qx = px+placaW-qrSize-mm(10), qy = py+placaH-qrSize-mm(10);
+    ctx.strokeStyle='#EEE'; ctx.lineWidth=mm(.4);
+    ctx.strokeRect(qx-mm(1),qy-mm(1),qrSize+mm(2),qrSize+mm(2));
+    ctx.drawImage(qrImg, qx, qy, qrSize, qrSize);
   }
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Identificações SMG6</title><style>';
-  html += '@page{size:A4 portrait;margin:14mm 12mm}';
-  html += '*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Arial,sans-serif}';
-  html += '.pg{width:100%;height:257mm;display:flex;align-items:center;justify-content:center;page-break-after:always}';
-  html += '.pg:last-child{page-break-after:avoid}';
-  html += '.placa{width:182mm;border:5px solid #111;border-radius:4px;overflow:hidden;background:#fff}';
-  html += '.topo{padding:24px 32px 28px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}';
-  html += '.pid{font-weight:900;line-height:1;letter-spacing:-2px;color:#111}';
-  html += '.psub{font-size:30px;font-weight:700;color:#111;opacity:.65}';
-  html += '.corpo{background:#fff;border-top:4px solid #111;padding:18px 32px 22px;display:flex;flex-direction:column;gap:10px;position:relative}';
-  html += '.nome{font-size:16px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;padding-bottom:10px;border-bottom:1px solid #EEE}';
-  html += '.sitem{display:flex;align-items:center;gap:10px;font-size:17px;color:#111;font-weight:500;max-width:75%}';
-  html += '.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}';
-  html += '.slabadge{margin-top:10px;font-size:14px;font-weight:700;padding:6px 16px;border-radius:20px;color:#fff;align-self:flex-start}';
-  html += '.qrcorner{position:absolute;bottom:18px;right:28px;width:75px;height:75px;background:#fff;border:1px solid #EEE;border-radius:6px;padding:4px}';
-  html += '.qrcorner img{width:100%;height:100%;object-fit:contain}';
-  html += '</style></head><body>';
-  lista.forEach(function(item,idx){
-    var z = item.zona;
-    var fontSize = z.nome.length<=6?'90px':z.nome.length<=9?'62px':'44px';
-    html += '<div class="pg"><div class="placa">';
-    html += '<div class="topo" style="background:'+z.cor+'">';
-    html += '<div class="pid" style="font-size:'+fontSize+'">'+z.nome.toUpperCase()+'</div>';
-    html += '<div class="psub">_'+item.id+'</div>';
-    html += '</div><div class="corpo">';
-    html += '<div class="nome">'+z.nome.toUpperCase()+'</div>';
-    z.status.forEach(function(s){
-      html += '<div class="sitem"><div class="dot" style="background:'+z.cor+'"></div><span>'+s+'</span></div>';
-    });
-    html += '<div class="slabadge" style="background:'+z.cor+'">'+z.sla+'</div>';
-    if(qrSrcs[idx]) html += '<div class="qrcorner"><img src="'+qrSrcs[idx]+'"></div>';
-    html += '</div></div></div>';
-  });
-  html += '</body></html>';
-  var win = window.open('', '_blank', 'width=500,height=700');
-  if(!win){ toast('❌ Permita pop-ups para imprimir'); return; }
-  win.document.write(html); win.document.close(); win.focus();
-  setTimeout(function(){ win.print(); }, 600);
-  toast('✅ Abrindo impressão de '+lista.length+' plaquinha(s)...');
+  return cvs;
+}
+
+async function idsImprimirPlaquinhas(lista){
+  if(!lista.length){ toast('⚠️ Nenhuma gaiola para imprimir'); return; }
+  toast('⏳ Gerando PDF...');
+  try{
+    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
+    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
+    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:'a4', compress:true});
+    for(var i=0; i<lista.length; i++){
+      var canvas = await renderPlaquinhaCanvas(lista[i]);
+      if(i>0) pdf.addPage('a4','portrait');
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297);
+    }
+    pdf.save('Identificacoes_SMG6_'+Date.now()+'.pdf');
+    toast('✅ PDF gerado com '+lista.length+' plaquinha(s)!');
+  }catch(e){
+    console.error(e);
+    toast('❌ Erro ao gerar PDF: '+e.message);
+  }
 }
 
 // ── GAYLORD ──
@@ -1825,13 +1877,115 @@ function rGay(){
 
 // ── SEM ID ──
 function proxSID(){const s=DB.ga('sids');return`SID-${String((s.length?parseInt(s[0].id.replace('SID-','')):0)+1).padStart(6,'0')}`}
-function gerarSID(){
-  const id=proxSID();const hoje=new Date().toLocaleDateString('pt-BR');
-  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  DB.push('sids',{id,data:hoje,hora,operador:U.nome,verificacoes:0,ultima_verif:null});
-  sbInsert('sids',{sid_id:id,data:hoje,hora,operador:U.nome,operador_lw:U.lw||'',verificacoes:0});
-  toast('✅ '+id+' gerado!');rSID();
+function sidQtyChg(d){
+  var el = document.getElementById('s-qtd-gerar');
+  if(el) el.value = Math.max(1, Math.min(100, (parseInt(el.value)||1)+d));
 }
+
+function gerarSID(){
+  var dataInp = document.getElementById('s-data-gerar').value; // formato yyyy-mm-dd
+  var dataFmt;
+  if(dataInp){
+    var partes = dataInp.split('-');
+    dataFmt = partes[2]+'/'+partes[1]+'/'+partes[0]; // pt-BR dd/mm/yyyy
+  } else {
+    dataFmt = new Date().toLocaleDateString('pt-BR');
+  }
+  var qtd = Math.max(1, Math.min(100, parseInt(document.getElementById('s-qtd-gerar').value)||1));
+  var hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  var gerados = [];
+  for(var i=0; i<qtd; i++){
+    var id = proxSID();
+    var novo = {id:id, data:dataFmt, hora:hora, operador:U.nome, verificacoes:0, ultima_verif:null};
+    DB.push('sids', novo);
+    gerados.push(novo);
+    sbInsert('sids',{sid_id:id, data:dataFmt, hora:hora, operador:U.nome, operador_lw:U.lw||'', verificacoes:0});
+  }
+  toast('✅ '+qtd+' etiqueta'+(qtd>1?'s':'')+' gerada'+(qtd>1?'s':'')+' — data: '+dataFmt);
+  rSID();
+}
+
+// Gera um PDF de verdade (100x150mm por etiqueta) — pra baixar e imprimir depois,
+// sem depender do diálogo de impressão direto do navegador
+async function imprimirSIDsPDF(){
+  var sids = DB.ga('sids');
+  if(!sids.length){ toast('⚠️ Nenhuma etiqueta gerada ainda'); return; }
+  var btn = event ? event.target : null;
+  var originalTxt = btn ? btn.innerHTML : null;
+  if(btn){ btn.innerHTML = '⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
+
+  try{
+    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
+    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
+    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
+
+    for(var i=0; i<sids.length; i++){
+      var s = sids[i];
+      var canvas = await renderSIDLabelCanvas(s);
+      if(i>0) pdf.addPage([100,150],'portrait');
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
+    }
+    pdf.save('Etiquetas_SemID_SMG6_'+Date.now()+'.pdf');
+    toast('✅ PDF gerado com '+sids.length+' etiqueta(s)!');
+  }catch(e){
+    console.error(e);
+    toast('❌ Erro ao gerar PDF: '+e.message);
+  }finally{
+    if(btn && originalTxt){ btn.innerHTML = originalTxt; btn.style.pointerEvents='auto'; }
+  }
+}
+
+// Desenha uma etiqueta SID num canvas 100x150mm (a ~203dpi, resolução Zebra) pra virar página do PDF
+async function renderSIDLabelCanvas(s){
+  var DPI = 203/25.4; // pontos por mm
+  var W = Math.round(100*DPI), H = Math.round(150*DPI);
+  var cvs = document.createElement('canvas'); cvs.width=W; cvs.height=H;
+  var ctx = cvs.getContext('2d');
+  function mm(v){ return Math.round(v*DPI); }
+
+  // fundo branco
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // topo colorido (roxo Sem ID)
+  var topoH = mm(45);
+  ctx.fillStyle = '#6A1B9A';
+  ctx.fillRect(0,0,W,topoH);
+  ctx.fillStyle = '#fff';
+  ctx.font = '900 '+mm(11)+'px Arial';
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.fillText(s.id, mm(6), mm(28));
+  ctx.font = 'bold '+mm(4)+'px Arial';
+  ctx.globalAlpha = 0.75;
+  ctx.fillText('_SEM IDENTIFICAÇÃO', mm(6), mm(38));
+  ctx.globalAlpha = 1;
+
+  // corpo branco
+  var y = topoH + mm(6);
+  ctx.fillStyle='#555'; ctx.font='bold '+mm(3.2)+'px Arial';
+  ctx.fillText('SEM IDENTIFICAÇÃO · SMG6', mm(6), y); y+=mm(4);
+  ctx.strokeStyle='#EEE'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(mm(6),y); ctx.lineTo(W-mm(6),y); ctx.stroke();
+  y += mm(7);
+
+  ctx.fillStyle='#111'; ctx.font=mm(3.6)+'px Arial';
+  ctx.fillText('📅 Data: '+s.data, mm(6), y); y+=mm(6);
+  ctx.fillText('🔍 Verificações: '+(s.verificacoes||0), mm(6), y); y+=mm(6);
+  ctx.fillText('🕐 Última: '+(s.ultima_verif||'—'), mm(6), y); y+=mm(8);
+
+  // QR no canto
+  var qrSize = mm(28);
+  var qrImg = await etiQrPromise(s.id, 300);
+  if(qrImg){
+    ctx.drawImage(qrImg, W-qrSize-mm(6), H-qrSize-mm(8), qrSize, qrSize);
+  }
+
+  // rodapé
+  ctx.fillStyle='#999'; ctx.font=mm(2.4)+'px Arial'; ctx.textAlign='center';
+  ctx.fillText('SMG6 · Stage Zone', W/2, H-mm(3));
+
+  return cvs;
+}
+
 function verificarSID(){
   const inp=document.getElementById('sv-inp').value.trim().toUpperCase();
   if(!inp){toast('⚠️ Informe o ID SID');return}
@@ -1855,6 +2009,11 @@ function mostrarSID(s){
   try{new QRCode(qr,{text:s.id,width:56,height:56,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M})}catch(e){}
 }
 function rSID(){
+  var dataEl = document.getElementById('s-data-gerar');
+  if(dataEl && !dataEl.value){
+    var hj = new Date();
+    dataEl.value = hj.getFullYear()+'-'+String(hj.getMonth()+1).padStart(2,'0')+'-'+String(hj.getDate()).padStart(2,'0');
+  }
   const sids=DB.ga('sids');
   if(sids.length)mostrarSID(sids[0]);
   const l=document.getElementById('s-lista');
@@ -2364,56 +2523,108 @@ function salvGerar(){
   toast('✅ '+qty+' etiqueta'+(qty>1?'s':'')+' gerada'+(qty>1?'s':''));
 }
 
-function salvImprimir(){
+// Desenha uma etiqueta DEVOS num canvas 100x150mm pra virar página do PDF
+async function renderDEVOSLabelCanvas(op,ch,desc,pac){
+  var DPI = 203/25.4;
+  var W = Math.round(100*DPI), H = Math.round(150*DPI);
+  var cvs = document.createElement('canvas'); cvs.width=W; cvs.height=H;
+  var ctx = cvs.getContext('2d');
+  function mm(v){ return Math.round(v*DPI); }
+
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  // header vermelho
+  var hH = mm(20);
+  ctx.fillStyle='#CC0000'; ctx.fillRect(0,0,W,hH);
+  ctx.fillStyle='#fff'; ctx.font='bold '+mm(6)+'px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('DEVOS - SALVADOS', W/2, hH/2);
+
+  // faixa operação
+  var opY = hH, opH = mm(10);
+  ctx.fillStyle='#1D1D1B'; ctx.fillRect(0,opY,W,opH);
+  ctx.fillStyle='#FFE600'; ctx.font='bold '+mm(5)+'px Arial';
+  ctx.fillText(op, W/2, opY+opH/2);
+
+  // corpo com dados
+  var y = opY+opH+mm(6);
+  ctx.textAlign='left';
+  function campo(label, valor){
+    ctx.fillStyle='#888'; ctx.font=mm(2.6)+'px Arial'; ctx.textBaseline='top';
+    ctx.fillText(label.toUpperCase(), mm(5), y); y+=mm(4);
+    ctx.fillStyle='#111'; ctx.font='bold '+mm(4.5)+'px Arial';
+    // quebra texto simples se muito longo
+    var maxW = W-mm(10);
+    var palavras = String(valor).split(' ');
+    var linha = '';
+    for(var i=0;i<palavras.length;i++){
+      var teste = linha+palavras[i]+' ';
+      if(ctx.measureText(teste).width > maxW && linha){ ctx.fillText(linha, mm(5), y); y+=mm(5.5); linha=palavras[i]+' '; }
+      else linha = teste;
+    }
+    if(linha){ ctx.fillText(linha, mm(5), y); y+=mm(5.5); }
+    y += mm(3);
+  }
+  campo('Chamado', ch);
+  campo('Produto', desc);
+  campo('Pacote', pac);
+
+  // barras de código (visual — não é código de barras real escaneável)
+  var bcY = H - mm(38);
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(mm(5),bcY); ctx.lineTo(W-mm(5),bcY); ctx.stroke();
+
+  function desenharBarras(texto, x, larguraDisp){
+    var str = '*'+String(texto).toUpperCase().replace(/[^A-Z0-9\-]/g,'').substring(0,14)+'*';
+    var barW = larguraDisp / (str.length*8);
+    var cx = x;
+    var barH = mm(16);
+    for(var i=0;i<str.length;i++){
+      var code = str.charCodeAt(i);
+      for(var b=0;b<8;b++){
+        var w = ((code+b)%3===0) ? barW*2 : barW;
+        if(b%2===0){ ctx.fillStyle='#000'; ctx.fillRect(cx, bcY+mm(4), Math.max(1,w-1), barH); }
+        cx += w;
+      }
+    }
+    ctx.fillStyle='#555'; ctx.font=mm(2.2)+'px Arial'; ctx.textAlign='center';
+    ctx.fillText(String(texto).substring(0,18), x+larguraDisp/2, bcY+mm(22));
+  }
+  var metade = (W-mm(10))/2;
+  desenharBarras(ch, mm(5), metade-mm(2));
+  desenharBarras(pac, mm(5)+metade+mm(4), metade-mm(2));
+
+  // rodapé
+  ctx.fillStyle='#999'; ctx.font=mm(2.4)+'px Arial'; ctx.textAlign='center';
+  ctx.fillText('SMG6 · '+new Date().toLocaleDateString('pt-BR'), W/2, H-mm(3));
+
+  return cvs;
+}
+
+async function salvImprimir(){
   var cards=document.querySelectorAll('#salv-grid > div[data-tipo]');
   if(!cards.length){toast('⚠️ Gere as etiquetas primeiro');return;}
-  var hoje=new Date().toLocaleDateString('pt-BR');
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">';
-  html+='<link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39+Text&display=swap" rel="stylesheet">';
-  html+='<style>';
-  html+='@page{size:100mm 150mm;margin:0}';
-  html+='*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
-  html+='body{background:#fff;font-family:Arial,sans-serif}';
-  html+='.label{width:100mm;height:150mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always;break-after:page}';
-  html+='.label:last-child{page-break-after:avoid;break-after:avoid}';
-  html+='.dh{background:#CC0000;color:#fff;height:20mm;display:flex;align-items:center;justify-content:center;font-size:11pt;font-weight:700;flex-shrink:0}';
-  html+='.do{background:#1D1D1B;color:#FFE600;height:10mm;display:flex;align-items:center;justify-content:center;font-size:9pt;font-weight:700;flex-shrink:0}';
-  html+='.db{padding:3mm 4mm;flex:1;display:flex;flex-direction:column;gap:3mm;overflow:hidden}';
-  html+='.dl{font-size:6pt;color:#888;text-transform:uppercase;letter-spacing:.5pt}';
-  html+='.dv{font-size:10pt;font-weight:700;color:#111;word-break:break-word}';
-  html+='.bc{display:flex;border-top:.3mm solid #ddd;height:30mm;flex-shrink:0}';
-  html+='.bci{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2mm}';
-  html+='.bci:first-child{border-right:.3mm solid #ddd}';
-  html+='.bcl{font-size:5pt;color:#aaa;text-transform:uppercase;margin-bottom:1mm}';
-  html+='.bcb{font-family:"Libre Barcode 39 Text",monospace;font-size:24pt;line-height:1;color:#000}';
-  html+='.bcs{font-size:5pt;color:#555;text-align:center;margin-top:1mm}';
-  html+='.ft{height:6mm;background:#f5f5f5;border-top:.3mm solid #ddd;display:flex;align-items:center;justify-content:center;font-size:5pt;color:#999;flex-shrink:0}';
-  html+='</style></head><body>';
-  
-  cards.forEach(function(c){
-    var op=c.dataset.op,ch=c.dataset.chamado,desc=c.dataset.desc,pac=c.dataset.pacote;
-    html+='<div class="label">';
-    html+='<div class="dh">DEVOS - SALVADOS</div>';
-    html+='<div class="do">'+op+'</div>';
-    html+='<div class="db">';
-    html+='<div><div class="dl">Chamado</div><div class="dv">'+ch+'</div></div>';
-    html+='<div><div class="dl">Produto</div><div class="dv">'+desc+'</div></div>';
-    html+='<div><div class="dl">Pacote</div><div class="dv">'+pac+'</div></div>';
-    html+='</div>';
-    html+='<div class="bc">';
-    html+='<div class="bci"><div class="bcl">Chamado</div><div class="bcb">*'+ch+'*</div><div class="bcs">'+ch+'</div></div>';
-    html+='<div class="bci"><div class="bcl">Pacote</div><div class="bcb">*'+pac.replace(/[^A-Z0-9\-_]/gi,'').substring(0,12)+'*</div><div class="bcs">'+pac.substring(0,20)+'</div></div>';
-    html+='</div>';
-    html+='<div class="ft">SMG6 · '+hoje+'</div>';
-    html+='</div>';
-  });
-  
-  html+='</body></html>';
-  var win=window.open('','_blank','width=450,height=650');
-  if(!win){toast('❌ Permita pop-ups para imprimir');return;}
-  win.document.write(html);win.document.close();win.focus();
-  setTimeout(function(){win.print();},1000);
-  toast('✅ Abrindo impressão...');
+  var btn = document.getElementById('salv-imp-btn');
+  var original = btn ? btn.innerHTML : null;
+  if(btn){ btn.innerHTML='⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
+  try{
+    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
+    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
+    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
+    var lista = Array.from(cards);
+    for(var i=0; i<lista.length; i++){
+      var c = lista[i];
+      var canvas = await renderDEVOSLabelCanvas(c.dataset.op, c.dataset.chamado, c.dataset.desc, c.dataset.pacote);
+      if(i>0) pdf.addPage([100,150],'portrait');
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
+    }
+    pdf.save('Etiquetas_DEVOS_SMG6_'+Date.now()+'.pdf');
+    toast('✅ PDF gerado com '+lista.length+' etiqueta(s)!');
+  }catch(e){
+    console.error(e);
+    toast('❌ Erro ao gerar PDF: '+e.message);
+  }finally{
+    if(btn && original){ btn.innerHTML=original; btn.style.pointerEvents='auto'; }
+  }
 }
 
 
