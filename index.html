@@ -391,6 +391,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       <div class="cm-d">Scan ID do pacote + Gaiola destino</div>
       <div class="cm-b" style="background:var(--dev)" id="b-sz">0 hoje</div>
     </div>
+  </div>
+
+  <!-- T2 -->
+  <div class="slbl-sec">☀️ T2 — 10h às 22h</div>
+  <div class="g2">
     <div class="cm" onclick="ir('painel')">
       <div class="cm-ic">🗺️</div><div class="cm-n">Painel Stage Zone</div>
       <div class="cm-d">Mapa das gaiolas em uso</div>
@@ -399,16 +404,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
       <div class="cm-ic">🗑️</div><div class="cm-n">Embalagem Gaylord</div>
       <div class="cm-d">Registrar embalagem no Gaylord ativo</div>
     </div>
-
     <div class="cm full" onclick="ir('ids')" style="border-color:var(--sid)">
       <div class="cm-ic">🪧</div><div class="cm-n">Identificações</div>
       <div class="cm-d">Plaquinhas de zona · Gaylord · Sem ID</div>
     </div>
-  </div>
-
-  <!-- T2 -->
-  <div class="slbl-sec">☀️ T2 — 10h às 22h</div>
-  <div class="g2">
     <div class="cm" onclick="ir('expedicao')" style="border-color:var(--fin)">
       <div class="cm-ic">🚚</div><div class="cm-n">Expedição HU</div>
       <div class="cm-d">Finalizadores · Supabase · XLSX</div>
@@ -485,7 +484,9 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 
 <!-- ══ PAINEL ══ -->
 <div class="tela" id="tela-painel">
-  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Painel Stage Zone</h2></div>
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>Painel Stage Zone</h2>
+    <button onclick="pAtualizar()" id="p-refresh-btn" style="background:var(--navy);color:var(--yellow);border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer">🔄 Atualizar</button>
+  </div>
   <div class="mapa-wrap">
     <div class="mapa-title">
       <span>GAIOLAS — coloridas = com pacotes · opacas = vazias</span>
@@ -1192,6 +1193,15 @@ function gridInit(){
           if(dot) dot.className='db-dot ok';
           if(lbl) lbl.textContent='Conectado';
           sbSyncUsers();
+          sbSyncDados(function(){
+            console.log('✅ Dados operacionais sincronizados (todos os aparelhos)');
+            // Se já estiver numa tela que depende desses dados, atualiza a visualização
+            try{
+              if(document.getElementById('tela-painel').classList.contains('ativa')) rPainel();
+              if(document.getElementById('tela-devol').classList.contains('ativa')) rDevol();
+              if(document.getElementById('tela-dash').classList.contains('ativa')) rDash();
+            }catch(e){}
+          });
         }
         resolve();
       }).catch(function(){ resolve(); });
@@ -1211,6 +1221,76 @@ function sbSyncUsers(){
       console.log('✅ '+users.length+' usuários sincronizados do Supabase');
     }
   }).catch(function(e){ console.warn('sbSyncUsers:', e); });
+}
+
+// Sincroniza os dados OPERACIONAIS (compartilhados entre todos os operadores/aparelhos)
+// Sem isso, cada celular só via os próprios registros — Painel/Devolução ficavam incompletos
+function sbSyncDados(callback){
+  if(!SB){ if(callback) callback(); return; }
+  var pendentes = 6;
+  function done(){ pendentes--; if(pendentes<=0 && callback) callback(); }
+
+  SB.from('alocacoes').select('*').order('created_at',{ascending:false}).limit(500).then(function(r){
+    if(r.data){
+      var arr = r.data.map(function(a){
+        return {id:a.pacote_id, gaiola:a.gaiola, cor:a.cor, operador:a.operador, data:a.data, hora:a.hora};
+      });
+      DB.s('aloc', arr);
+    }
+    done();
+  }).catch(function(e){ console.warn('sync alocacoes:',e); done(); });
+
+  SB.from('embalagens').select('*').order('created_at',{ascending:false}).limit(500).then(function(r){
+    if(r.data){
+      var arr = r.data.map(function(e){
+        return {cod:e.pacote_id, gaylord:e.gaylord_id, operador:e.operador, data:e.data, hora:e.hora};
+      });
+      DB.s('descartes', arr);
+    }
+    done();
+  }).catch(function(e){ console.warn('sync embalagens:',e); done(); });
+
+  SB.from('sids').select('*').order('created_at',{ascending:false}).limit(300).then(function(r){
+    if(r.data){
+      var arr = r.data.map(function(s){
+        return {id:s.sid_id, data:s.data, hora:s.hora, operador:s.operador, verificacoes:s.verificacoes||0, ultima_verif:s.ultima_verif};
+      });
+      DB.s('sids', arr);
+    }
+    done();
+  }).catch(function(e){ console.warn('sync sids:',e); done(); });
+
+  SB.from('gaylords').select('*').order('created_at',{ascending:false}).limit(300).then(function(r){
+    if(r.data){
+      var arr = r.data.map(function(g){
+        return {id:g.gay_id, data:g.data, operador:g.operador};
+      });
+      DB.s('gaylords', arr);
+    }
+    done();
+  }).catch(function(e){ console.warn('sync gaylords:',e); done(); });
+
+  SB.from('devol').select('*').order('created_at',{ascending:false}).limit(200).then(function(r){
+    if(r.data){
+      var arr = r.data.map(function(d){
+        var gaiolas = d.gaiolas;
+        if(typeof gaiolas === 'string'){ try{ gaiolas = JSON.parse(gaiolas); }catch(e){ gaiolas=[gaiolas]; } }
+        return {gaiolas:gaiolas, operador:d.operador, data:d.data, hora:d.hora};
+      });
+      DB.s('devol', arr);
+    }
+    done();
+  }).catch(function(e){ console.warn('sync devol:',e); done(); });
+
+  SB.from('hus').select('*').order('created_at',{ascending:false}).limit(200).then(function(r){
+    if(r.data){
+      var arr = r.data.map(function(h){
+        return {id:h.hu_id, data:h.data, operador:h.operador};
+      });
+      DB.s('hus', arr);
+    }
+    done();
+  }).catch(function(e){ console.warn('sync hus:',e); done(); });
 }
 
 // Helpers Supabase — sempre seguros mesmo se SB não estiver pronto
@@ -1602,6 +1682,16 @@ function rAlocar(){
 }
 
 // ── PAINEL ──
+function pAtualizar(){
+  var btn = document.getElementById('p-refresh-btn');
+  if(btn){ btn.textContent = '⏳ Atualizando...'; btn.style.pointerEvents='none'; }
+  sbSyncDados(function(){
+    rPainel();
+    if(btn){ btn.textContent = '🔄 Atualizar'; btn.style.pointerEvents='auto'; }
+    toast('✅ Painel atualizado com dados de todos os operadores');
+  });
+}
+
 function rPainel(){
   const hoje=new Date().toLocaleDateString('pt-BR');
   const regs=DB.ga('aloc').filter(r=>r.data===hoje);
@@ -1735,8 +1825,16 @@ function idsPrintTodas(){
   ZONAS.forEach(function(z){ z.ids.forEach(function(id){ todas.push({id:id, zona:z}); }); });
   idsImprimirPlaquinhas(todas);
 }
-function idsImprimirPlaquinhas(lista){
+async function idsImprimirPlaquinhas(lista){
   if(!lista.length){ toast('⚠️ Nenhuma gaiola para imprimir'); return; }
+  toast('⏳ Gerando QR codes...');
+  // Gera o QR (só o ID da gaiola) de cada item antes de montar a página
+  var qrSrcs = {};
+  for(var qi=0; qi<lista.length; qi++){
+    var img = await etiQrPromise(lista[qi].id, 200);
+    qrSrcs[qi] = img ? img.src : '';
+  }
+
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Identificações SMG6</title><style>';
   html += '@page{size:A4 portrait;margin:14mm 12mm}';
   html += '*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-family:Arial,sans-serif}';
@@ -1746,13 +1844,15 @@ function idsImprimirPlaquinhas(lista){
   html += '.topo{padding:24px 32px 28px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}';
   html += '.pid{font-weight:900;line-height:1;letter-spacing:-2px;color:#111}';
   html += '.psub{font-size:30px;font-weight:700;color:#111;opacity:.65}';
-  html += '.corpo{background:#fff;border-top:4px solid #111;padding:18px 32px 22px;display:flex;flex-direction:column;gap:10px}';
+  html += '.corpo{background:#fff;border-top:4px solid #111;padding:18px 32px 22px;display:flex;flex-direction:column;gap:10px;position:relative}';
   html += '.nome{font-size:16px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;padding-bottom:10px;border-bottom:1px solid #EEE}';
-  html += '.sitem{display:flex;align-items:center;gap:10px;font-size:17px;color:#111;font-weight:500}';
+  html += '.sitem{display:flex;align-items:center;gap:10px;font-size:17px;color:#111;font-weight:500;max-width:75%}';
   html += '.dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}';
   html += '.slabadge{margin-top:10px;font-size:14px;font-weight:700;padding:6px 16px;border-radius:20px;color:#fff;align-self:flex-start}';
+  html += '.qrcorner{position:absolute;bottom:18px;right:28px;width:75px;height:75px;background:#fff;border:1px solid #EEE;border-radius:6px;padding:4px}';
+  html += '.qrcorner img{width:100%;height:100%;object-fit:contain}';
   html += '</style></head><body>';
-  lista.forEach(function(item){
+  lista.forEach(function(item,idx){
     var z = item.zona;
     var fontSize = z.nome.length<=6?'90px':z.nome.length<=9?'62px':'44px';
     html += '<div class="pg"><div class="placa">';
@@ -1765,6 +1865,7 @@ function idsImprimirPlaquinhas(lista){
       html += '<div class="sitem"><div class="dot" style="background:'+z.cor+'"></div><span>'+s+'</span></div>';
     });
     html += '<div class="slabadge" style="background:'+z.cor+'">'+z.sla+'</div>';
+    if(qrSrcs[idx]) html += '<div class="qrcorner"><img src="'+qrSrcs[idx]+'"></div>';
     html += '</div></div></div>';
   });
   html += '</body></html>';
