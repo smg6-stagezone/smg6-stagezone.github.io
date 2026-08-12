@@ -415,7 +415,11 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
     </div>
     <div class="cm full" onclick="ir('ids')" style="border-color:var(--sid)">
       <div class="cm-ic">🏷️</div><div class="cm-n">Etiqueta</div>
-      <div class="cm-d">Zonas · Gaylord · Sem ID · DEVOS — tudo em um só lugar</div>
+      <div class="cm-d">Gaylord · Sem ID · DEVOS — etiquetas de pacote</div>
+    </div>
+    <div class="cm full" onclick="ir('identificacoes')" style="border-color:#37474F">
+      <div class="cm-ic">🪧</div><div class="cm-n">Identificações</div>
+      <div class="cm-d">Plaquinhas de zona · Criar/remover gaiolas</div>
     </div>
     <div class="cm full" onclick="ir('historico')" style="border-color:#37474F">
       <div class="cm-ic">📋</div><div class="cm-n">Histórico Geral</div>
@@ -549,25 +553,34 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 </div>
 
 <!-- ══ IDENTIFICAÇÕES + ETIQUETAS ══ -->
+<!-- ══ IDENTIFICAÇÕES (zonas + gestão de gaiolas) ══ -->
+<div class="tela" id="tela-identificacoes">
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>🪧 Identificações</h2></div>
+  <div style="font-size:11px;color:var(--gray);margin-bottom:12px">Plaquinhas de zona e gestão de gaiolas — crie ou remova gaiolas conforme a operação muda.</div>
+
+  <!-- MAPA VISUAL -->
+  <div class="mapa-wrap" style="margin-bottom:14px">
+    <div class="mapa-title"><span>MAPA DAS ZONAS — se ajusta ao criar/remover gaiolas</span></div>
+    <svg id="ident-mapa-svg" viewBox="0 0 240 200" style="width:100%;display:block"></svg>
+  </div>
+
+  <div id="ids-lista"></div>
+  <button class="bp" style="margin-top:8px" onclick="idsPrintTodas()">📄 Gerar PDF de Todas as Plaquinhas</button>
+</div>
+
+<!-- ══ ETIQUETA (labels de pacote) ══ -->
 <div class="tela" id="tela-ids">
   <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>🏷️ Etiqueta</h2></div>
 
   <!-- TABS -->
   <div class="ids-tabs" style="flex-wrap:wrap;gap:5px">
-    <div class="ids-tab on" id="itab-zones" onclick="idTab('zones')" style="flex:1">🪧 Zonas</div>
-    <div class="ids-tab" id="itab-gay" onclick="idTab('gay')" style="flex:1">🏷️ Gaylord</div>
+    <div class="ids-tab on" id="itab-gay" onclick="idTab('gay')" style="flex:1">🏷️ Gaylord</div>
     <div class="ids-tab" id="itab-sid" onclick="idTab('sid')" style="flex:1">🔍 Sem ID</div>
     <div class="ids-tab" id="itab-devos" onclick="idTab('devos')" style="flex:1">🎫 DEVOS</div>
   </div>
 
-  <!-- ABA ZONAS -->
-  <div id="ids-zones">
-    <div id="ids-lista"></div>
-    <button class="bp" style="margin-top:8px" onclick="idsPrintTodas()">📄 Gerar PDF de Todas as Plaquinhas</button>
-  </div>
-
   <!-- ABA GAYLORD -->
-  <div id="ids-gay" style="display:none">
+  <div id="ids-gay">
     <div class="etiq">
       <div class="etiq-topo" style="background:#37474F">
         <div class="etiq-id" id="g-id">GAY-000001</div>
@@ -1363,7 +1376,8 @@ function zonaRemoveGaiola(key, id){
 function zonasRefreshAll(){
   ZONAS = zonasLoad();
   rebuildGMAP();
-  try{ if(document.getElementById('tela-ids').classList.contains('ativa')) rIds(); }catch(e){}
+  try{ if(document.getElementById('tela-identificacoes').classList.contains('ativa')) rIdentificacoes(); }catch(e){}
+  try{ if(document.getElementById('tela-ids').classList.contains('ativa')){ rGay(); rSID(); } }catch(e){}
   try{ if(document.getElementById('tela-alocar').classList.contains('ativa')) aBuildGrid(); }catch(e){}
   try{ if(document.getElementById('tela-painel').classList.contains('ativa')) rPainel(); }catch(e){}
   try{ if(document.getElementById('tela-devol').classList.contains('ativa')) rDevol(); }catch(e){}
@@ -1373,27 +1387,29 @@ function zonasRefreshAll(){
 let GMAP = [];
 function rebuildGMAP(){
   var g = [];
-  function col(ids, x, w, colorFallback){
-    ids.forEach(function(id,i){ g.push({id:id,x:x,y:4+i*22,w:w,h:19,cor:colorFallback}); });
+  var MAX_POR_COLUNA = 6;      // gaiolas antes de "quebrar" pra próxima coluna
+  var COL_W = 26, COL_H = 19, COL_GAP_Y = 3, X_STEP = 30, PAD = 4;
+  var cursorX = PAD;
+
+  // Cada zona vira 1 ou mais colunas lado a lado — se crescer, gera nova coluna automaticamente
+  function desenharZona(zona){
+    if(!zona || !zona.ids.length) return;
+    var numColunas = Math.ceil(zona.ids.length / MAX_POR_COLUNA);
+    for(var c=0; c<numColunas; c++){
+      var fatia = zona.ids.slice(c*MAX_POR_COLUNA, (c+1)*MAX_POR_COLUNA);
+      fatia.forEach(function(id,i){
+        g.push({id:id, x:cursorX, y:PAD+i*(COL_H+COL_GAP_Y), w:COL_W, h:COL_H, cor:zona.cor});
+      });
+      cursorX += X_STEP;
+    }
+    cursorX += 6; // respiro entre zonas diferentes
   }
-  var zDev=ZONAS.find(function(z){return z.key==='dev';});
-  var zFin=ZONAS.find(function(z){return z.key==='fin';});
-  var zMis=ZONAS.find(function(z){return z.key==='mis';});
-  var zSid=ZONAS.find(function(z){return z.key==='sid';});
-  var zBlk=ZONAS.find(function(z){return z.key==='blk';});
-  var zPs =ZONAS.find(function(z){return z.key==='ps';});
-  if(zDev) col(zDev.ids, 4, 28, zDev.cor);
-  if(zFin) col(zFin.ids, 38, 24, zFin.cor);
-  if(zMis) col(zMis.ids, 62, 24, zMis.cor);
-  if(zSid){
-    var metade = Math.ceil(zSid.ids.length/2);
-    col(zSid.ids.slice(0,metade), 94, 24, zSid.cor);
-    col(zSid.ids.slice(metade), 118, 24, zSid.cor);
-  }
-  if(zBlk) col(zBlk.ids, 150, 28, zBlk.cor);
-  if(zPs){
-    zPs.ids.forEach(function(id,i){ g.push({id:id,x:4+i*46,y:126,w:42,h:20,cor:zPs.cor}); });
-  }
+
+  ['dev','fin','mis','sid','blk','ps'].forEach(function(key){
+    var z = ZONAS.find(function(x){return x.key===key;});
+    desenharZona(z);
+  });
+
   GMAP = g;
 }
 rebuildGMAP();
@@ -1419,6 +1435,12 @@ function gerarSVG(svgId,usadas,processadas,clicavel){
     </g>`;
   });
   svg.innerHTML=h;
+  // Ajusta o viewBox pra caber todas as gaiolas, mesmo se foram adicionadas além do padrão original
+  if(GMAP.length){
+    const maxX = Math.max.apply(null, GMAP.map(g=>g.x+g.w));
+    const maxY = Math.max.apply(null, GMAP.map(g=>g.y+g.h));
+    svg.setAttribute('viewBox', '0 0 '+(maxX+6)+' '+(maxY+10));
+  }
 }
 
 // ── TOAST ──
@@ -1491,10 +1513,10 @@ function ir(t){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   const nm=document.getElementById('n-'+t);if(nm)nm.classList.add('on');
   window.scrollTo(0,0);
-  const fn={dash:rDash,alocar:rAlocar,painel:rPainel,devol:rDevol,ps:rPS,descarte:rDescarte,ids:rIds,expedicao:rExp,salvados:function(){},admin:rAdmin,historico:rHistorico};
+  const fn={dash:rDash,alocar:rAlocar,painel:rPainel,devol:rDevol,ps:rPS,descarte:rDescarte,ids:rGay,identificacoes:rIdentificacoes,expedicao:rExp,salvados:function(){},admin:rAdmin,historico:rHistorico};
   if(fn[t])fn[t]();
   // Telas que mostram dados de TODOS os operadores — sincroniza ao entrar, pra sempre ver o mais atual
-  const telasCompartilhadas = ['painel','ids','admin','devol','expedicao','historico'];
+  const telasCompartilhadas = ['painel','ids','identificacoes','admin','devol','expedicao','historico'];
   if(SB && telasCompartilhadas.includes(t)){
     sbSyncDados(function(){ if(fn[t]) fn[t](); });
   }
@@ -1502,7 +1524,7 @@ function ir(t){
 
 // ── IDS TABS ──
 function idTab(tab){
-  ['zones','gay','sid','devos'].forEach(t=>{
+  ['gay','sid','devos'].forEach(t=>{
     const secEl=document.getElementById('ids-'+t);
     if(secEl)secEl.style.display=t===tab?'block':'none';
     const tabEl=document.getElementById('itab-'+t);
@@ -1779,8 +1801,29 @@ function descarte(){
 }
 
 // ── IDENTIFICAÇÕES (Zonas) — plaquinhas imprimíveis + gestão de gaiolas ──
-function rIds(){
+// Mapa de ESTRUTURA — mostra todas as gaiolas sempre visíveis (não é sobre ocupação, é sobre layout físico)
+function gerarSVGEstrutura(svgId){
+  const svg=document.getElementById(svgId); if(!svg) return;
+  let h='';
+  GMAP.forEach(g=>{
+    const fs=g.id.length>3?6.5:7.5;
+    h+=`<g data-id="${g.id}">
+      <rect x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="3" fill="${g.cor}" stroke="rgba(255,255,255,.5)" stroke-width="1"/>
+      <text x="${g.x+g.w/2}" y="${g.y+g.h/2+2.5}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="${fs}" font-weight="700" font-family="Arial">${g.id}</text>
+    </g>`;
+  });
+  svg.innerHTML=h;
+  // Ajusta o viewBox (largura e altura) pra caber tudo, mesmo com gaiolas extras adicionadas
+  if(GMAP.length){
+    const maxX = Math.max.apply(null, GMAP.map(g=>g.x+g.w));
+    const maxY = Math.max.apply(null, GMAP.map(g=>g.y+g.h));
+    svg.setAttribute('viewBox', '0 0 '+(maxX+6)+' '+(maxY+10));
+  }
+}
+
+function rIdentificacoes(){
   ZONAS = zonasLoad();
+  gerarSVGEstrutura('ident-mapa-svg');
   document.getElementById('ids-lista').innerHTML = ZONAS.map(function(z){
     var gaiolasChips = z.ids.map(function(id){
       return '<span style="display:inline-flex;align-items:center;gap:4px;background:'+z.cor+'22;color:'+z.cor+';border:1px solid '+z.cor+'55;border-radius:20px;padding:3px 8px;font-size:10px;font-weight:700;margin:2px">'+id+
