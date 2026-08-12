@@ -546,239 +546,105 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);max-width:430p
 
 <!-- ══ IDENTIFICAÇÕES + ETIQUETAS ══ -->
 <div class="tela" id="tela-ids">
-  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>🏷️ Etiqueta</h2></div>
+  <div class="sec"><button class="back" onclick="ir('dash')">← Voltar</button><h2>🦓 Etiquetas · Zebra</h2></div>
 
-  <!-- TABS -->
-  <div class="ids-tabs" style="flex-wrap:wrap;gap:5px">
-    <div class="ids-tab on" id="itab-zones" onclick="idTab('zones')" style="flex:1">🪧 Zonas</div>
-    <div class="ids-tab" id="itab-gay" onclick="idTab('gay')" style="flex:1">🏷️ Gaylord</div>
-    <div class="ids-tab" id="itab-sid" onclick="idTab('sid')" style="flex:1">🔍 Sem ID</div>
-    <div class="ids-tab" id="itab-devos" onclick="idTab('devos')" style="flex:1">🎫 DEVOS</div>
-    <div class="ids-tab" id="itab-zebra" onclick="idTab('zebra')" style="flex:1">🦓 Zebra</div>
+  <!-- SUB-TABS -->
+  <div class="tabs" style="margin-bottom:14px">
+    <button class="tab on" id="zt-tab-s" onclick="ztTab('s')">SEM ID</button>
+    <button class="tab" id="zt-tab-g" onclick="ztTab('g')">Gaylord</button>
+    <button class="tab" id="zt-tab-d" onclick="ztTab('d')">DEVOS</button>
   </div>
 
-  <!-- ABA ZONAS -->
-  <div id="ids-zones">
-    <div id="ids-lista"></div>
-    <button class="bp" style="margin-top:8px" onclick="idsPrintTodas()">📄 Gerar PDF de Todas as Plaquinhas</button>
-  </div>
-
-  <!-- ABA GAYLORD -->
-  <div id="ids-gay" style="display:none">
-    <div class="etiq">
-      <div class="etiq-topo" style="background:#37474F">
-        <div class="etiq-id" id="g-id">GAY-000001</div>
-        <div class="etiq-sub">_GAYLORD DESTRUIÇÃO</div>
-      </div>
-      <div class="etiq-body">
-        <div class="etiq-info">
-          <div class="etiq-nome">GAYLORD DESTRUIÇÃO · SMG6</div>
-          <div class="etiq-det" id="g-dt">📅 —</div>
-          <div class="etiq-det" id="g-op">👤 —</div>
-          <div class="etiq-det" id="g-qt">📦 0 itens</div>
-        </div>
-        <div class="etiq-qr" id="g-qr"></div>
-      </div>
-    </div>
-    <button class="bp" onclick="gerarGay()">➕ Gerar Novo Gaylord</button>
-    <button class="bp2" id="gay-imp-btn" onclick="imprimirGaylordsPDF()">📄 Gerar PDF · Zebra 100×150mm</button>
-    <div class="slbl-sec">Histórico</div>
-    <div class="lista" id="g-lista"><div class="empty"><div class="ic">🏷️</div>Nenhum gaylord</div></div>
-  </div>
-
-  <!-- ABA SEM ID -->
-  <div id="ids-sid" style="display:none">
-    <div class="etiq">
-      <div class="etiq-topo" style="background:var(--sid)">
-        <div class="etiq-id" id="s-id">SID-000001</div>
-        <div class="etiq-sub">_SEM IDENTIFICAÇÃO</div>
-      </div>
-      <div class="etiq-body">
-        <div class="etiq-info">
-          <div class="etiq-nome">SEM IDENTIFICAÇÃO · SMG6</div>
-          <div class="etiq-det" id="s-dt">📅 Gerado: —</div>
-          <div class="etiq-det" id="s-vf">🔍 0 verificações</div>
-          <div class="etiq-det" id="s-uv">🕐 Última: —</div>
-          <span class="vbadge" id="s-vb" style="background:#FFF3E0;color:var(--ps)">Aguardando verificação</span>
-        </div>
-        <div class="etiq-qr" id="s-qr"></div>
-      </div>
-    </div>
-
-    <div class="scard" style="margin-bottom:10px">
-      <div class="slbl" style="margin-bottom:5px">📅 Data da etiqueta</div>
-      <div style="font-size:10px;color:var(--gray);margin-bottom:6px">Use uma data futura pra pré-imprimir etiquetas com antecedência</div>
-      <input type="date" id="s-data-gerar" class="sinp" style="margin-bottom:10px">
-      <div class="slbl" style="margin-bottom:5px">Quantidade</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="bok" onclick="sidQtyChg(-1)" style="padding:10px 16px;font-size:16px">−</button>
-        <input id="s-qtd-gerar" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
-        <button class="bok" onclick="sidQtyChg(1)" style="padding:10px 16px;font-size:16px">+</button>
-      </div>
-    </div>
-
-    <button class="bp" onclick="gerarSID()">➕ Gerar Etiqueta(s) SID</button>
-    <div class="div"></div>
-    <div class="slbl">🔍 Verificar etiqueta (scan QR ou digitar)</div>
-    <div class="srow" style="margin-bottom:12px">
-      <input class="sinp" id="sv-inp" placeholder="SID-000001..." onkeydown="if(event.key==='Enter')verificarSID()">
-      <button class="bok" onclick="verificarSID()">✓</button>
-    </div>
-    <button class="bp2" onclick="imprimirSIDsPDF()">📄 Gerar PDF pra Imprimir</button>
-    <div style="font-size:10px;color:var(--gray);margin-top:6px;text-align:center">Baixa um PDF com as etiquetas geradas — imprime quando quiser, sem enviar direto pra impressora</div>
-    <div class="slbl-sec">Etiquetas geradas</div>
-    <div class="lista" id="s-lista"><div class="empty"><div class="ic">🔍</div>Nenhuma etiqueta</div></div>
-  </div>
-
-  <!-- ABA DEVOS -->
-  <div id="ids-devos" style="display:none">
-    <div style="background:#FFEBEE;border:1px solid #CC0000;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:11px;color:#B71C1C;line-height:1.5">
-      🎫 <b>Esta etiqueta exige abertura de chamado.</b> Preencha o número do chamado (SHP-X) antes de gerar.
+  <!-- SEM ID -->
+  <div id="zt-semid">
+    <div style="background:#E8F5E9;border:1px solid #81C784;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:10px;color:#2E7D32;line-height:1.6">
+      📋 Último impresso: <b>SEMID_SMG6_2441</b> · Reimpressão a partir de <b>SEMID_SMG6_2381</b>
     </div>
     <div class="scard" style="margin-bottom:12px">
-      <div class="slbl" style="margin-bottom:8px">Operação</div>
-      <select id="ed-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:11px;outline:none">
-        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option><option>GYN</option>
+      <div class="slbl" style="margin-bottom:5px">Operação</div>
+      <select id="zt-s-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none" onchange="ztUpdS()">
+        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
+        <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
+        <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
       </select>
-      <div class="slbl" style="margin-bottom:5px">Nº do Chamado</div>
-      <input id="ed-chamado2" type="text" placeholder="SHP-1" class="sinp" style="margin-bottom:11px">
-      <div class="slbl" style="margin-bottom:5px">Descrição do produto</div>
-      <textarea id="ed-desc2" placeholder="Ex: bicicleta spinning, caixa de som..." style="width:100%;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:55px;outline:none;margin-bottom:11px"></textarea>
-      <div class="slbl" style="margin-bottom:5px">Nº do Pacote (SEMID)</div>
-      <input id="ed-pacote2" type="text" placeholder="SEMID_SMG6_2211" class="sinp" style="margin-bottom:11px">
+      <div class="slbl" style="margin-bottom:5px">Número inicial</div>
+      <input type="number" id="zt-s-num" value="2381" min="1" class="sinp" style="margin-bottom:10px" oninput="ztUpdS()">
+      <div class="slbl" style="margin-bottom:5px">ID que será gerado</div>
+      <div id="zt-s-prev" style="background:#F0F2F5;border:1.5px solid var(--navy);border-radius:7px;padding:9px 12px;font-size:15px;font-weight:900;color:var(--navy);text-align:center;letter-spacing:.5px;margin-bottom:10px;word-break:break-all">SEMID_SMG6_2381</div>
       <div class="slbl" style="margin-bottom:5px">Quantidade</div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:0">
-        <button class="bok" onclick="salvChg(-1)" style="padding:10px 16px;font-size:16px">−</button>
-        <input id="ed-qty2" type="number" value="1" min="1" max="20" class="sinp" style="text-align:center">
-        <button class="bok" onclick="salvChg(1)" style="padding:10px 16px;font-size:16px">+</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="bok" onclick="ztChg('zt-s-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
+        <input id="zt-s-qty" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
+        <button class="bok" onclick="ztChg('zt-s-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
       </div>
     </div>
-    <button class="bp" onclick="salvGerar()" style="margin-bottom:8px">▶ Gerar Etiquetas DEVOS</button>
-    <button class="bp2" id="salv-imp-btn" onclick="salvImprimir()">📄 Gerar PDF · Zebra 100×150mm</button>
-    <div class="slbl-sec">Pré-visualização</div>
-    <div id="salv-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">
-      <div style="color:var(--gray);font-size:12px;padding:20px;text-align:center;width:100%">🏷️ Clique em Gerar para visualizar</div>
+    <button class="bp" id="zt-btn-s" onclick="ztGerarPDF('semid')">📄 Gerar PDF · SEM ID · Zebra</button>
+  </div>
+
+  <!-- GAYLORD -->
+  <div id="zt-gaylord" style="display:none">
+    <div style="background:#E8F5E9;border:1px solid #81C784;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:10px;color:#2E7D32;line-height:1.6">
+      📋 Último na planilha: <b>G183_SMG6</b> · Próximo sugerido: <b>G184</b>
     </div>
-    <div style="background:#FFF3E0;border:1px solid #FF8F00;border-radius:8px;padding:12px;margin-top:14px;font-size:11px;color:#795548;line-height:1.8">
-      <b style="color:#E65100">🦓 Como imprimir na Zebra ZT430 Plus:</b><br>
-      1. Clique em <b>Gerar PDF</b> — baixa o arquivo no celular/computador<br>
-      2. Abra o PDF e imprima quando quiser<br>
-      3. Na impressão, selecione a <b>Zebra ZT430 Plus</b><br>
-      4. Papel: <b>100mm × 150mm</b> · Margens: <b>Nenhuma</b> · Escala: <b>100%</b>
+    <div class="scard" style="margin-bottom:12px">
+      <div class="slbl" style="margin-bottom:5px">Operação</div>
+      <select id="zt-g-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none" onchange="ztUpdG()">
+        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
+        <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
+        <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
+      </select>
+      <div class="slbl" style="margin-bottom:5px">Número inicial</div>
+      <input type="number" id="zt-g-num" value="184" min="1" class="sinp" style="margin-bottom:10px" oninput="ztUpdG()">
+      <div class="slbl" style="margin-bottom:5px">ID que será gerado</div>
+      <div id="zt-g-prev" style="background:#F0F2F5;border:1.5px solid var(--navy);border-radius:7px;padding:9px 12px;font-size:15px;font-weight:900;color:var(--navy);text-align:center;letter-spacing:.5px;margin-bottom:10px;word-break:break-all">G184_SMG6</div>
+      <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="bok" onclick="ztChg('zt-g-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
+        <input id="zt-g-qty" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
+        <button class="bok" onclick="ztChg('zt-g-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
+      </div>
     </div>
+    <button class="bp" id="zt-btn-g" onclick="ztGerarPDF('gaylord')">📄 Gerar PDF · Gaylord · Zebra</button>
+  </div>
+
+  <!-- DEVOS -->
+  <div id="zt-devos" style="display:none">
+    <div style="background:#FFEBEE;border:1px solid #EF9A9A;border-radius:8px;padding:8px 10px;margin-bottom:12px;font-size:10px;color:#B71C1C;line-height:1.6">
+      🎫 <b>Exige chamado aberto (SHP-X)</b> antes de gerar.
+    </div>
+    <div class="scard" style="margin-bottom:12px">
+      <div class="slbl" style="margin-bottom:5px">Operação</div>
+      <select id="zt-d-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none">
+        <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
+        <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
+        <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
+      </select>
+      <div class="slbl" style="margin-bottom:5px">Nº do Chamado</div>
+      <input type="text" id="zt-d-ch" placeholder="SHP-1" class="sinp" style="margin-bottom:10px">
+      <div class="slbl" style="margin-bottom:5px">Descrição do produto</div>
+      <textarea id="zt-d-desc" placeholder="Ex: bicicleta spinning..." style="width:100%;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:55px;outline:none;margin-bottom:10px"></textarea>
+      <div class="slbl" style="margin-bottom:5px">Nº do Pacote (SEMID)</div>
+      <input type="text" id="zt-d-pac" placeholder="SEMID_SMG6_2381" class="sinp" style="margin-bottom:10px">
+      <div class="slbl" style="margin-bottom:5px">Quantidade</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="bok" onclick="ztChg('zt-d-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
+        <input id="zt-d-qty" type="number" value="1" min="1" max="20" class="sinp" style="text-align:center">
+        <button class="bok" onclick="ztChg('zt-d-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
+      </div>
+    </div>
+    <button class="bp" id="zt-btn-d" onclick="ztGerarPDF('devos')">📄 Gerar PDF · DEVOS · Zebra</button>
+  </div>
+
+  <div style="background:#FFF3E0;border:1px solid #FFB74D;border-radius:8px;padding:10px 12px;margin-top:14px;font-size:10px;color:#5D4037;line-height:1.7">
+    <b style="color:#E65100">🦓 Zebra ZT430 Plus — como imprimir:</b><br>
+    1. Toque em <b>Gerar PDF</b><br>
+    2. Abra no <b>Adobe Acrobat Reader</b><br>
+    3. Imprimir → <b>Zebra ZT430 Plus</b><br>
+    4. Tamanho: <b>"Tamanho real"</b> (não ajustar)<br>
+    5. Orientação: <b>Retrato / Portrait</b> ✅
   </div>
 
 </div>
-  <!-- ABA ZEBRA — Gerador PDF Zebra ZT430 Plus (SEMID_SMG6 / Gaylord / DEVOS avulso) -->
-  <div id="ids-zebra" style="display:none">
-
-    <div style="background:#1D1D1B;border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
-      <span style="font-size:24px">🦓</span>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:#FFE600">Gerador PDF · Zebra ZT430 Plus</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.6)">Etiquetas 100×150mm verticais · padrão Mercado Livre</div>
-      </div>
-    </div>
-
-    <!-- SUB-TABS -->
-    <div style="display:flex;gap:5px;margin-bottom:12px">
-      <div id="zt-tab-s" style="flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid var(--navy);background:var(--navy);color:var(--yellow)" onclick="ztTab('s')">SEM ID</div>
-      <div id="zt-tab-g" style="flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid #DDD;color:var(--gray);background:#fff" onclick="ztTab('g')">Gaylord</div>
-      <div id="zt-tab-d" style="flex:1;padding:8px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border-radius:7px;border:1.5px solid #DDD;color:var(--gray);background:#fff" onclick="ztTab('d')">DEVOS</div>
-    </div>
-
-    <!-- SEMID -->
-    <div id="zt-semid">
-      <div style="background:#E8F5E9;border:1px solid #4CAF50;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:#2E7D32;line-height:1.5">
-        📋 Último impresso: <b>SEMID_SMG6_2441</b> · Reimpressão de 60 a partir de <b>2381</b>
-      </div>
-      <div class="scard" style="margin-bottom:10px">
-        <div class="slbl" style="margin-bottom:5px">Operação</div>
-        <select id="zt-s-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none" onchange="ztUpdS()">
-          <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
-          <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
-          <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
-        </select>
-        <div class="slbl" style="margin-bottom:5px">Número inicial</div>
-        <input type="number" id="zt-s-num" value="2381" min="1" class="sinp" style="margin-bottom:10px" oninput="ztUpdS()">
-        <div class="slbl" style="margin-bottom:5px">ID que será gerado</div>
-        <div id="zt-s-prev" style="background:#F0F2F5;border:1.5px solid var(--navy);border-radius:7px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--navy);text-align:center;letter-spacing:.5px;margin-bottom:10px;word-break:break-all">SEMID_SMG6_2381</div>
-        <div class="slbl" style="margin-bottom:5px">Quantidade</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="bok" onclick="ztChg('zt-s-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
-          <input id="zt-s-qty" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
-          <button class="bok" onclick="ztChg('zt-s-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
-        </div>
-      </div>
-      <button class="bp" onclick="ztGerarPDF('semid')" id="zt-btn-s">📄 Gerar PDF · SEMID Zebra</button>
-    </div>
-
-    <!-- GAYLORD -->
-    <div id="zt-gaylord" style="display:none">
-      <div style="background:#E8F5E9;border:1px solid #4CAF50;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:#2E7D32;line-height:1.5">
-        📋 Último na planilha: <b>G183_SMG6</b> · Próximo sugerido: <b>G184</b>
-      </div>
-      <div class="scard" style="margin-bottom:10px">
-        <div class="slbl" style="margin-bottom:5px">Operação</div>
-        <select id="zt-g-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none" onchange="ztUpdG()">
-          <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
-          <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
-          <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
-        </select>
-        <div class="slbl" style="margin-bottom:5px">Número inicial</div>
-        <input type="number" id="zt-g-num" value="184" min="1" class="sinp" style="margin-bottom:10px" oninput="ztUpdG()">
-        <div class="slbl" style="margin-bottom:5px">ID que será gerado</div>
-        <div id="zt-g-prev" style="background:#F0F2F5;border:1.5px solid var(--navy);border-radius:7px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--navy);text-align:center;letter-spacing:.5px;margin-bottom:10px;word-break:break-all">G184_SMG6</div>
-        <div class="slbl" style="margin-bottom:5px">Quantidade</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="bok" onclick="ztChg('zt-g-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
-          <input id="zt-g-qty" type="number" value="1" min="1" max="100" class="sinp" style="text-align:center">
-          <button class="bok" onclick="ztChg('zt-g-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
-        </div>
-      </div>
-      <button class="bp" onclick="ztGerarPDF('gaylord')" id="zt-btn-g">📄 Gerar PDF · Gaylord Zebra</button>
-    </div>
-
-    <!-- DEVOS -->
-    <div id="zt-devos" style="display:none">
-      <div style="background:#FFEBEE;border:1px solid #CC0000;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:10px;color:#B71C1C;line-height:1.5">
-        🎫 Exige chamado aberto (SHP-X) antes de imprimir.
-      </div>
-      <div class="scard" style="margin-bottom:10px">
-        <div class="slbl" style="margin-bottom:5px">Operação</div>
-        <select id="zt-d-op" style="width:100%;border:1.5px solid #DDD;border-radius:7px;padding:9px 10px;font-size:13px;margin-bottom:10px;outline:none">
-          <option value="SMG6" selected>SMG6</option><option>BHZ</option><option>CWB</option>
-          <option>FLN</option><option>FOR</option><option>GYN</option><option>POA</option>
-          <option>REC</option><option>RJC</option><option>SSA</option><option>VIX</option>
-        </select>
-        <div class="slbl" style="margin-bottom:5px">Nº do Chamado</div>
-        <input type="text" id="zt-d-ch" placeholder="SHP-1" class="sinp" style="margin-bottom:10px">
-        <div class="slbl" style="margin-bottom:5px">Descrição do produto</div>
-        <textarea id="zt-d-desc" placeholder="Ex: bicicleta spinning..." style="width:100%;border:2px solid var(--navy);border-radius:8px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;min-height:55px;outline:none;margin-bottom:10px"></textarea>
-        <div class="slbl" style="margin-bottom:5px">Nº do Pacote (SEMID)</div>
-        <input type="text" id="zt-d-pac" placeholder="SEMID_SMG6_2381" class="sinp" style="margin-bottom:10px">
-        <div class="slbl" style="margin-bottom:5px">Quantidade</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="bok" onclick="ztChg('zt-d-qty',-1)" style="padding:10px 16px;font-size:16px">−</button>
-          <input id="zt-d-qty" type="number" value="1" min="1" max="20" class="sinp" style="text-align:center">
-          <button class="bok" onclick="ztChg('zt-d-qty',1)" style="padding:10px 16px;font-size:16px">+</button>
-        </div>
-      </div>
-      <button class="bp" onclick="ztGerarPDF('devos')" id="zt-btn-d">📄 Gerar PDF · DEVOS Zebra</button>
-    </div>
-
-    <div style="background:#FFF3E0;border:1px solid #FF8F00;border-radius:8px;padding:10px 12px;margin-top:14px;font-size:10px;color:#795548;line-height:1.7">
-      <b style="color:#E65100">🦓 Zebra ZT430 Plus — como imprimir:</b><br>
-      1. Toque em <b>Gerar PDF</b> — salva no celular<br>
-      2. Abra no <b>Adobe Acrobat Reader</b><br>
-      3. Imprimir → <b>Zebra ZT430 Plus</b><br>
-      4. Tamanho: <b>"Tamanho real"</b> (não ajustar)<br>
-      5. Orientação: <b>Retrato (Portrait)</b> ✅
-    </div>
-
-  </div>
-
-
 
 <!-- ══ ADMIN ══ -->
 <div class="tela" id="tela-admin">
@@ -1578,16 +1444,6 @@ function ir(t){
 }
 
 // ── IDS TABS ──
-function idTab(tab){
-  ['zones','gay','sid','devos','zebra'].forEach(t=>{
-    const secEl=document.getElementById('ids-'+t);
-    if(secEl)secEl.style.display=t===tab?'block':'none';
-    const tabEl=document.getElementById('itab-'+t);
-    if(tabEl)tabEl.className='ids-tab'+(t===tab?' on':'');
-  });
-  if(tab==='gay')rGay();
-  if(tab==='sid')rSID();
-}
 
 // ── DASHBOARD ──
 function rDash(){
@@ -1856,42 +1712,12 @@ function descarte(){
 }
 
 // ── IDENTIFICAÇÕES (Zonas) — plaquinhas imprimíveis + gestão de gaiolas ──
-function rIds(){
-  ZONAS = zonasLoad();
-  document.getElementById('ids-lista').innerHTML = ZONAS.map(function(z){
-    var gaiolasChips = z.ids.map(function(id){
-      return '<span style="display:inline-flex;align-items:center;gap:4px;background:'+z.cor+'22;color:'+z.cor+';border:1px solid '+z.cor+'55;border-radius:20px;padding:3px 8px;font-size:10px;font-weight:700;margin:2px">'+id+
-        '<button onclick="zonaRemoveGaiola(\''+z.key+'\',\''+id+'\')" style="background:none;border:none;color:'+z.cor+';cursor:pointer;font-size:12px;line-height:1;padding:0;margin-left:2px">×</button></span>';
-    }).join('');
-    var statusList = z.status.map(function(s){
-      return '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#333"><span style="width:6px;height:6px;border-radius:50%;background:'+z.cor+';flex-shrink:0"></span>'+s+'</div>';
-    }).join('');
-    return '<div style="background:#fff;border-radius:11px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'+
-      '<div style="background:'+z.cor+';padding:12px 14px;display:flex;align-items:center;justify-content:space-between">'+
-        '<div style="color:#fff;font-weight:900;font-size:15px">'+z.nome+'</div>'+
-        '<button onclick="idsPrintZona(\''+z.key+'\')" style="background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>'+
-      '</div>'+
-      '<div style="padding:12px 14px">'+
-        '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0F0">'+statusList+'</div>'+
-        '<div style="font-size:10px;font-weight:700;color:'+z.cor+';margin-bottom:10px">'+z.sla+'</div>'+
-        '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Gaiolas ('+z.ids.length+')</div>'+
-        '<div>'+gaiolasChips+'</div>'+
-        '<button onclick="zonaAddGaiola(\''+z.key+'\')" style="margin-top:8px;background:var(--navy);color:var(--yellow);border:none;padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">➕ Adicionar Gaiola</button>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-}
 
 // Imprime as plaquinhas de uma zona (uma por gaiola, formato completo)
 function idsPrintZona(key){
   var z = ZONAS.find(function(x){return x.key===key;});
   if(!z) return;
   idsImprimirPlaquinhas(z.ids.map(function(id){return {id:id, zona:z};}));
-}
-function idsPrintTodas(){
-  var todas = [];
-  ZONAS.forEach(function(z){ z.ids.forEach(function(id){ todas.push({id:id, zona:z}); }); });
-  idsImprimirPlaquinhas(todas);
 }
 async function renderPlaquinhaCanvas(item){
   var DPI = 300/25.4; // 300dpi pra ficar nítido em A4
@@ -1984,12 +1810,6 @@ async function idsImprimirPlaquinhas(lista){
 
 // ── GAYLORD ──
 function proxGay(){const g=DB.ga('gaylords');return`GAY-${String((g.length?parseInt(g[0].id.replace('GAY-','')):0)+1).padStart(6,'0')}`}
-function gerarGay(){
-  const id=proxGay();const hoje=new Date().toLocaleDateString('pt-BR');
-  DB.push('gaylords',{id,data:hoje,operador:U.nome});
-  sbInsert('gaylords',{gay_id:id,data:hoje,operador:U.nome,operador_lw:U?U.lw||'':''});
-  toast('✅ '+id+' gerado!');rGay();
-}
 function rGay(){
   const g=DB.ga('gaylords');
   const at=g.length?g[0]:{id:proxGay(),data:new Date().toLocaleDateString('pt-BR'),operador:U?.nome||'—'};
@@ -2007,33 +1827,7 @@ function rGay(){
 
 // ── SEM ID ──
 function proxSID(){const s=DB.ga('sids');return`SID-${String((s.length?parseInt(s[0].id.replace('SID-','')):0)+1).padStart(6,'0')}`}
-function sidQtyChg(d){
-  var el = document.getElementById('s-qtd-gerar');
-  if(el) el.value = Math.max(1, Math.min(100, (parseInt(el.value)||1)+d));
-}
 
-function gerarSID(){
-  var dataInp = document.getElementById('s-data-gerar').value; // formato yyyy-mm-dd
-  var dataFmt;
-  if(dataInp){
-    var partes = dataInp.split('-');
-    dataFmt = partes[2]+'/'+partes[1]+'/'+partes[0]; // pt-BR dd/mm/yyyy
-  } else {
-    dataFmt = new Date().toLocaleDateString('pt-BR');
-  }
-  var qtd = Math.max(1, Math.min(100, parseInt(document.getElementById('s-qtd-gerar').value)||1));
-  var hora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  var gerados = [];
-  for(var i=0; i<qtd; i++){
-    var id = proxSID();
-    var novo = {id:id, data:dataFmt, hora:hora, operador:U.nome, verificacoes:0, ultima_verif:null};
-    DB.push('sids', novo);
-    gerados.push(novo);
-    sbInsert('sids',{sid_id:id, data:dataFmt, hora:hora, operador:U.nome, operador_lw:U.lw||'', verificacoes:0});
-  }
-  toast('✅ '+qtd+' etiqueta'+(qtd>1?'s':'')+' gerada'+(qtd>1?'s':'')+' — data: '+dataFmt);
-  rSID();
-}
 
 // Gera um PDF de verdade (100x150mm por etiqueta) — pra baixar e imprimir depois,
 // sem depender do diálogo de impressão direto do navegador
@@ -2062,120 +1856,10 @@ async function imprimirHUsPDF(){
   }
 }
 
-async function imprimirGaylordsPDF(){
-  var gays = DB.ga('gaylords');
-  if(!gays.length){ toast('⚠️ Nenhum gaylord gerado ainda'); return; }
-  var btn = document.getElementById('gay-imp-btn');
-  var original = btn ? btn.innerHTML : null;
-  if(btn){ btn.innerHTML='⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
-  try{
-    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
-    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
-    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
-    for(var i=0; i<gays.length; i++){
-      var canvas = await etiRenderSGCard(gays[i].id, 'gaylord');
-      if(i>0) pdf.addPage([100,150],'portrait');
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
-    }
-    pdf.save('Etiquetas_Gaylord_SMG6_'+Date.now()+'.pdf');
-    toast('✅ PDF gerado com '+gays.length+' etiqueta(s)!');
-  }catch(e){
-    console.error(e);
-    toast('❌ Erro ao gerar PDF: '+e.message);
-  }finally{
-    if(btn && original){ btn.innerHTML=original; btn.style.pointerEvents='auto'; }
-  }
-}
 
-async function imprimirSIDsPDF(){
-  var sids = DB.ga('sids');
-  if(!sids.length){ toast('⚠️ Nenhuma etiqueta gerada ainda'); return; }
-  var btn = event ? event.target : null;
-  var originalTxt = btn ? btn.innerHTML : null;
-  if(btn){ btn.innerHTML = '⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
-
-  try{
-    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
-    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
-    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
-
-    for(var i=0; i<sids.length; i++){
-      var s = sids[i];
-      var canvas = await etiRenderSGCard(s.id, 'semid');
-      if(i>0) pdf.addPage([100,150],'portrait');
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
-    }
-    pdf.save('Etiquetas_SemID_SMG6_'+Date.now()+'.pdf');
-    toast('✅ PDF gerado com '+sids.length+' etiqueta(s)!');
-  }catch(e){
-    console.error(e);
-    toast('❌ Erro ao gerar PDF: '+e.message);
-  }finally{
-    if(btn && originalTxt){ btn.innerHTML = originalTxt; btn.style.pointerEvents='auto'; }
-  }
-}
 
 // Desenha uma etiqueta SID num canvas 100x150mm (a ~203dpi, resolução Zebra) pra virar página do PDF
-async function renderSIDLabelCanvas(s){
-  var DPI = 203/25.4; // pontos por mm
-  var W = Math.round(100*DPI), H = Math.round(150*DPI);
-  var cvs = document.createElement('canvas'); cvs.width=W; cvs.height=H;
-  var ctx = cvs.getContext('2d');
-  function mm(v){ return Math.round(v*DPI); }
 
-  // fundo branco
-  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-
-  // topo colorido (roxo Sem ID)
-  var topoH = mm(45);
-  ctx.fillStyle = '#6A1B9A';
-  ctx.fillRect(0,0,W,topoH);
-  ctx.fillStyle = '#fff';
-  ctx.font = '900 '+mm(11)+'px Arial';
-  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
-  ctx.fillText(s.id, mm(6), mm(28));
-  ctx.font = 'bold '+mm(4)+'px Arial';
-  ctx.globalAlpha = 0.75;
-  ctx.fillText('_SEM IDENTIFICAÇÃO', mm(6), mm(38));
-  ctx.globalAlpha = 1;
-
-  // corpo branco
-  var y = topoH + mm(6);
-  ctx.fillStyle='#555'; ctx.font='bold '+mm(3.2)+'px Arial';
-  ctx.fillText('SEM IDENTIFICAÇÃO · SMG6', mm(6), y); y+=mm(4);
-  ctx.strokeStyle='#EEE'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(mm(6),y); ctx.lineTo(W-mm(6),y); ctx.stroke();
-  y += mm(7);
-
-  ctx.fillStyle='#111'; ctx.font=mm(3.6)+'px Arial';
-  ctx.fillText('📅 Data: '+s.data, mm(6), y); y+=mm(6);
-  ctx.fillText('🔍 Verificações: '+(s.verificacoes||0), mm(6), y); y+=mm(6);
-  ctx.fillText('🕐 Última: '+(s.ultima_verif||'—'), mm(6), y); y+=mm(8);
-
-  // QR no canto
-  var qrSize = mm(28);
-  var qrImg = await etiQrPromise(s.id, 300);
-  if(qrImg){
-    ctx.drawImage(qrImg, W-qrSize-mm(6), H-qrSize-mm(8), qrSize, qrSize);
-  }
-
-  // rodapé
-  ctx.fillStyle='#999'; ctx.font=mm(2.4)+'px Arial'; ctx.textAlign='center';
-  ctx.fillText('SMG6 · Stage Zone', W/2, H-mm(3));
-
-  return cvs;
-}
-
-function verificarSID(){
-  const inp=document.getElementById('sv-inp').value.trim().toUpperCase();
-  if(!inp){toast('⚠️ Informe o ID SID');return}
-  const sids=DB.ga('sids');const idx=sids.findIndex(s=>s.id===inp);
-  if(idx<0){toast('❌ SID não encontrado');return}
-  sids[idx].verificacoes=(sids[idx].verificacoes||0)+1;
-  sids[idx].ultima_verif=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  DB.s('sids',sids);document.getElementById('sv-inp').value='';
-  toast(`🔍 ${inp} — ${sids[idx].verificacoes}ª verificação`);mostrarSID(sids[idx]);
-}
 function mostrarSID(s){
   document.getElementById('s-id').textContent=s.id;
   document.getElementById('s-dt').textContent=`📅 Gerado: ${s.data} às ${s.hora}`;
@@ -2692,10 +2376,6 @@ function etiGerarPDF(){
 // ══════════════════════════════
 // ── SALVADOS (DEVOS standalone) ──
 // ══════════════════════════════
-function salvChg(d){
-  var e=document.getElementById('ed-qty2');
-  if(e)e.value=Math.max(1,Math.min(20,(parseInt(e.value)||1)+d));
-}
 
 function salvMkCard(op,ch,desc,pac){
   var c=document.createElement('div');
@@ -2713,17 +2393,6 @@ function salvMkCard(op,ch,desc,pac){
   return c;
 }
 
-function salvGerar(){
-  var grid=document.getElementById('salv-grid');if(!grid)return;
-  grid.innerHTML='';
-  var op=document.getElementById('ed-op').value;
-  var ch=document.getElementById('ed-chamado2').value.trim()||'SHP-?';
-  var desc=document.getElementById('ed-desc2').value.trim()||'-';
-  var pac=document.getElementById('ed-pacote2').value.trim()||'-';
-  var qty=Math.min(20,Math.max(1,parseInt(document.getElementById('ed-qty2').value)||1));
-  for(var i=0;i<qty;i++) grid.appendChild(salvMkCard(op,ch,desc,pac));
-  toast('✅ '+qty+' etiqueta'+(qty>1?'s':'')+' gerada'+(qty>1?'s':''));
-}
 
 // Desenha uma etiqueta DEVOS num canvas 100x150mm pra virar página do PDF
 async function renderDEVOSLabelCanvas(op,ch,desc,pac){
@@ -2802,32 +2471,6 @@ async function renderDEVOSLabelCanvas(op,ch,desc,pac){
   return cvs;
 }
 
-async function salvImprimir(){
-  var cards=document.querySelectorAll('#salv-grid > div[data-tipo]');
-  if(!cards.length){toast('⚠️ Gere as etiquetas primeiro');return;}
-  var btn = document.getElementById('salv-imp-btn');
-  var original = btn ? btn.innerHTML : null;
-  if(btn){ btn.innerHTML='⏳ Gerando PDF...'; btn.style.pointerEvents='none'; }
-  try{
-    var jsPDFClass = window.jspdf ? window.jspdf.jsPDF : null;
-    if(!jsPDFClass){ toast('❌ Biblioteca de PDF não carregou'); return; }
-    var pdf = new jsPDFClass({orientation:'portrait', unit:'mm', format:[100,150], compress:true});
-    var lista = Array.from(cards);
-    for(var i=0; i<lista.length; i++){
-      var c = lista[i];
-      var canvas = await etiRenderDevos(c.dataset.op, c.dataset.chamado, c.dataset.desc, c.dataset.pacote);
-      if(i>0) pdf.addPage([100,150],'portrait');
-      pdf.addImage(canvas.toDataURL('image/jpeg',0.95),'JPEG',0,0,100,150);
-    }
-    pdf.save('Etiquetas_DEVOS_SMG6_'+Date.now()+'.pdf');
-    toast('✅ PDF gerado com '+lista.length+' etiqueta(s)!');
-  }catch(e){
-    console.error(e);
-    toast('❌ Erro ao gerar PDF: '+e.message);
-  }finally{
-    if(btn && original){ btn.innerHTML=original; btn.style.pointerEvents='auto'; }
-  }
-}
 
 
 // ═══════════════════════════════
@@ -3460,91 +3103,100 @@ window.addEventListener('DOMContentLoaded', function(){
    MÓDULO ZEBRA — Gerador PDF avulso
    Reusa etiRenderSGCard e etiRenderDevos
    ════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════
+   MÓDULO ETIQUETAS — Zebra ZT430 Plus
+   Usa etiRenderSGCard / etiRenderDevos / ETI_*
+   ════════════════════════════════════════════ */
 function ztTab(t){
   ['s','g','d'].forEach(x=>{
-    const btn=document.getElementById('zt-tab-'+x);
-    const pnl=document.getElementById('zt-'+(x==='s'?'semid':x==='g'?'gaylord':'devos'));
     const on=x===t;
-    btn.style.background=on?'var(--navy)':'#fff';
-    btn.style.color=on?'var(--yellow)':'var(--gray)';
-    btn.style.borderColor=on?'var(--navy)':'#DDD';
+    const btn=document.getElementById('zt-tab-'+x);
+    if(btn){btn.style.background=on?'var(--navy)':'#fff';btn.style.color=on?'var(--yellow)':'var(--navy)';}
+    const pnl=document.getElementById('zt-'+(x==='s'?'semid':x==='g'?'gaylord':'devos'));
     if(pnl) pnl.style.display=on?'block':'none';
   });
 }
-function ztChg(id,d){const e=document.getElementById(id);e.value=Math.max(1,Math.min(100,(parseInt(e.value)||1)+d));}
+function ztChg(id,d){const e=document.getElementById(id);if(e)e.value=Math.max(1,Math.min(100,(parseInt(e.value)||1)+d));}
 function ztUpdS(){
-  const op=document.getElementById('zt-s-op').value;
-  const n=parseInt(document.getElementById('zt-s-num').value)||1;
-  document.getElementById('zt-s-prev').textContent='SEMID_'+op+'_'+n;
+  const op=(document.getElementById('zt-s-op')||{}).value||'SMG6';
+  const n=parseInt((document.getElementById('zt-s-num')||{}).value)||1;
+  const el=document.getElementById('zt-s-prev');if(el)el.textContent='SEMID_'+op+'_'+n;
 }
 function ztUpdG(){
-  const op=document.getElementById('zt-g-op').value;
-  const n=parseInt(document.getElementById('zt-g-num').value)||1;
-  document.getElementById('zt-g-prev').textContent='G'+n+'_'+op;
+  const op=(document.getElementById('zt-g-op')||{}).value||'SMG6';
+  const n=parseInt((document.getElementById('zt-g-num')||{}).value)||1;
+  const el=document.getElementById('zt-g-prev');if(el)el.textContent='G'+n+'_'+op;
 }
-
 async function ztGerarPDF(tipo){
   const btnId='zt-btn-'+(tipo==='semid'?'s':tipo==='gaylord'?'g':'d');
   const btn=document.getElementById(btnId);
+  const labels={semid:'📄 Gerar PDF · SEM ID · Zebra',gaylord:'📄 Gerar PDF · Gaylord · Zebra',devos:'📄 Gerar PDF · DEVOS · Zebra'};
   if(btn){btn.textContent='⏳ Gerando PDF...';btn.style.pointerEvents='none';}
   try{
-    const jsPDFClass=window.jspdf?window.jspdf.jsPDF:null;
+    const jsPDFClass=window.jspdf&&window.jspdf.jsPDF;
     if(!jsPDFClass){toast('❌ jsPDF não carregou');return;}
     const pdf=new jsPDFClass({orientation:'portrait',unit:'mm',format:[100,150],compress:true});
-    let ids=[], first=true;
+    let first=true;
+    const ev=id=>(document.getElementById(id)||{}).value||'';
+    const evi=id=>parseInt((document.getElementById(id)||{}).value)||1;
 
     if(tipo==='semid'){
-      const op=document.getElementById('zt-s-op').value;
-      const start=parseInt(document.getElementById('zt-s-num').value)||1;
-      const qty=Math.min(100,Math.max(1,parseInt(document.getElementById('zt-s-qty').value)||1));
+      const op=ev('zt-s-op')||'SMG6';
+      const start=evi('zt-s-num');
+      const qty=Math.min(100,Math.max(1,evi('zt-s-qty')));
+      const ids=[];
       for(let i=0;i<qty;i++) ids.push('SEMID_'+op+'_'+(start+i));
-      // Avança o número
-      document.getElementById('zt-s-num').value=start+qty;ztUpdS();
+      const numEl=document.getElementById('zt-s-num');if(numEl)numEl.value=start+qty;ztUpdS();
       for(let i=0;i<ids.length;i++){
         const cvs=await etiRenderSGCard(ids[i],'semid');
-        if(!first) pdf.addPage([100,150],'portrait');
+        if(!first)pdf.addPage([100,150],'portrait');
         pdf.addImage(cvs.toDataURL('image/jpeg',0.97),'JPEG',0,0,100,150);
         first=false;
       }
       pdf.save('SEMID_SMG6_'+ids[0]+'_ate_'+ids[ids.length-1]+'.pdf');
-      toast('✅ PDF gerado: '+ids.length+' etiqueta(s) SEM ID!');
+      toast('✅ '+ids.length+' etiqueta(s) SEM ID gerada(s)!');
 
-    } else if(tipo==='gaylord'){
-      const op=document.getElementById('zt-g-op').value;
-      const start=parseInt(document.getElementById('zt-g-num').value)||1;
-      const qty=Math.min(100,Math.max(1,parseInt(document.getElementById('zt-g-qty').value)||1));
+    }else if(tipo==='gaylord'){
+      const op=ev('zt-g-op')||'SMG6';
+      const start=evi('zt-g-num');
+      const qty=Math.min(100,Math.max(1,evi('zt-g-qty')));
+      const ids=[];
       for(let i=0;i<qty;i++) ids.push('G'+(start+i)+'_'+op);
-      document.getElementById('zt-g-num').value=start+qty;ztUpdG();
+      const numEl=document.getElementById('zt-g-num');if(numEl)numEl.value=start+qty;ztUpdG();
       for(let i=0;i<ids.length;i++){
         const cvs=await etiRenderSGCard(ids[i],'gaylord');
-        if(!first) pdf.addPage([100,150],'portrait');
+        if(!first)pdf.addPage([100,150],'portrait');
         pdf.addImage(cvs.toDataURL('image/jpeg',0.97),'JPEG',0,0,100,150);
         first=false;
       }
       pdf.save('Gaylord_'+ids[0]+'_ate_'+ids[ids.length-1]+'.pdf');
-      toast('✅ PDF gerado: '+ids.length+' etiqueta(s) Gaylord!');
+      toast('✅ '+ids.length+' etiqueta(s) Gaylord gerada(s)!');
 
-    } else {
-      const op=document.getElementById('zt-d-op').value;
-      const ch=document.getElementById('zt-d-ch').value.trim()||'SHP-?';
-      const desc=document.getElementById('zt-d-desc').value.trim()||'-';
-      const pac=document.getElementById('zt-d-pac').value.trim()||'-';
-      const qty=Math.min(20,Math.max(1,parseInt(document.getElementById('zt-d-qty').value)||1));
+    }else{
+      const op=ev('zt-d-op')||'SMG6';
+      const ch=ev('zt-d-ch')||'SHP-?';
+      const desc=ev('zt-d-desc')||'-';
+      const pac=ev('zt-d-pac')||'-';
+      const qty=Math.min(20,Math.max(1,evi('zt-d-qty')));
+      if(!ev('zt-d-ch')){toast('⚠️ Informe o número do chamado (SHP-X)');return;}
       for(let i=0;i<qty;i++){
         const cvs=await etiRenderDevos(op,ch,desc,pac);
-        if(!first) pdf.addPage([100,150],'portrait');
+        if(!first)pdf.addPage([100,150],'portrait');
         pdf.addImage(cvs.toDataURL('image/jpeg',0.97),'JPEG',0,0,100,150);
         first=false;
       }
       pdf.save('DEVOS_'+ch+'_SMG6_'+Date.now()+'.pdf');
-      toast('✅ PDF gerado: '+qty+' etiqueta(s) DEVOS!');
+      toast('✅ '+qty+' etiqueta(s) DEVOS gerada(s)!');
     }
   }catch(e){
-    console.error(e);toast('❌ Erro PDF: '+e.message);
+    console.error(e);toast('❌ Erro: '+e.message);
   }finally{
-    if(btn){btn.textContent='📄 Gerar PDF · '+tipo.charAt(0).toUpperCase()+tipo.slice(1)+' Zebra';btn.style.pointerEvents='auto';}
+    if(btn){btn.textContent=labels[tipo];btn.style.pointerEvents='auto';}
   }
 }
+
 </script>
 </body>
 </html>
