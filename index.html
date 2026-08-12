@@ -1832,20 +1832,52 @@ function rIdentificacoes(){
     var statusList = z.status.map(function(s){
       return '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#333"><span style="width:6px;height:6px;border-radius:50%;background:'+z.cor+';flex-shrink:0"></span>'+s+'</div>';
     }).join('');
-    return '<div style="background:#fff;border-radius:11px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)">'+
-      '<div style="background:'+z.cor+';padding:12px 14px;display:flex;align-items:center;justify-content:space-between">'+
-        '<div style="color:#fff;font-weight:900;font-size:15px">'+z.nome+'</div>'+
-        '<button onclick="idsPrintZona(\''+z.key+'\')" style="background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>'+
+    var exemploId = z.ids[0] || z.key.toUpperCase()+'1';
+    var fontSize = z.nome.length<=6?'34px':z.nome.length<=9?'24px':'18px';
+    var qrDivId = 'idqr-'+z.key;
+    return '<div style="background:#fff;border-radius:11px;overflow:hidden;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #eee">'+
+
+      // ── PRÉVIA DA PLAQUINHA (padrão estabelecido: topo colorido + corpo + QR no canto) ──
+      '<div style="padding:14px 14px 0">'+
+        '<div style="border:3px solid #111;border-radius:6px;overflow:hidden">'+
+          '<div style="background:'+z.cor+';padding:14px 16px 12px;display:flex;flex-direction:column;justify-content:flex-end;gap:3px">'+
+            '<div style="font-size:'+fontSize+';font-weight:900;line-height:1;letter-spacing:-1px;color:#111">'+z.nome.toUpperCase()+'</div>'+
+            '<div style="font-size:13px;font-weight:700;color:#111;opacity:.65">_'+exemploId+'</div>'+
+          '</div>'+
+          '<div style="background:#fff;border-top:3px solid #111;padding:10px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;position:relative">'+
+            '<div style="flex:1;min-width:0">'+
+              '<div style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.6px;padding-bottom:5px;border-bottom:1px solid #EEE;margin-bottom:5px">'+z.nome.toUpperCase()+'</div>'+
+              statusList+
+              '<div style="margin-top:6px;font-size:9px;font-weight:700;padding:3px 9px;border-radius:14px;color:#fff;display:inline-block;background:'+z.cor+'">'+z.sla+'</div>'+
+            '</div>'+
+            '<div id="'+qrDivId+'" style="width:44px;height:44px;flex-shrink:0"></div>'+
+          '</div>'+
+        '</div>'+
       '</div>'+
-      '<div style="padding:12px 14px">'+
-        '<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #F0F0F0">'+statusList+'</div>'+
-        '<div style="font-size:10px;font-weight:700;color:'+z.cor+';margin-bottom:10px">'+z.sla+'</div>'+
+
+      // ── AÇÕES ──
+      '<div style="padding:10px 14px 14px;display:flex;justify-content:flex-end">'+
+        '<button onclick="idsPrintZona(\''+z.key+'\')" style="background:'+z.cor+';border:none;color:#fff;padding:6px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">📄 Gerar PDF</button>'+
+      '</div>'+
+
+      // ── GESTÃO DE GAIOLAS ──
+      '<div style="padding:0 14px 14px;border-top:1px solid #F5F5F5;padding-top:12px">'+
         '<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Gaiolas ('+z.ids.length+')</div>'+
         '<div>'+gaiolasChips+'</div>'+
         '<button onclick="zonaAddGaiola(\''+z.key+'\')" style="margin-top:8px;background:var(--navy);color:var(--yellow);border:none;padding:7px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">➕ Adicionar Gaiola</button>'+
       '</div>'+
     '</div>';
   }).join('');
+
+  // Gera o QR pequeno de cada zona (usando o ID de exemplo, mesma lógica da impressão)
+  ZONAS.forEach(function(z){
+    var exemploId = z.ids[0] || z.key.toUpperCase()+'1';
+    var qrEl = document.getElementById('idqr-'+z.key);
+    if(qrEl){
+      qrEl.innerHTML='';
+      try{ new QRCode(qrEl,{text:exemploId,width:44,height:44,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+    }
+  });
 }
 
 // Imprime as plaquinhas de uma zona (uma por gaiola, formato completo)
