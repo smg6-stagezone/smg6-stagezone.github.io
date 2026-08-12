@@ -1848,7 +1848,7 @@ function rIdentificacoes(){
             '<div style="flex:1;min-width:0">'+
               '<div style="font-size:9px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.6px;padding-bottom:5px;border-bottom:1px solid #EEE;margin-bottom:5px">'+z.nome.toUpperCase()+'</div>'+
               statusList+
-              '<div style="margin-top:6px;font-size:9px;font-weight:700;padding:3px 9px;border-radius:14px;color:#fff;display:inline-block;background:'+z.cor+'">'+z.sla+'</div>'+
+              (z.key==='ps' ? '<div style="margin-top:6px;font-size:9px;font-weight:700;padding:3px 9px;border-radius:14px;color:#fff;display:inline-block;background:'+z.cor+'">'+z.sla+'</div>' : '')+
             '</div>'+
             '<div id="'+qrDivId+'" style="width:44px;height:44px;flex-shrink:0"></div>'+
           '</div>'+
@@ -1938,14 +1938,16 @@ async function renderPlaquinhaCanvas(item){
     cy += mm(9);
   });
 
-  cy += mm(2);
-  ctx.font='bold '+mm(3.4)+'px Arial';
-  var slaW = ctx.measureText(z.sla).width + mm(10);
-  ctx.fillStyle=z.cor;
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px+mm(8),cy-mm(4.5),slaW,mm(8),mm(4)) : ctx.rect(px+mm(8),cy-mm(4.5),slaW,mm(8));
-  ctx.fill();
-  ctx.fillStyle='#fff';
-  ctx.fillText(z.sla, px+mm(13), cy+mm(1));
+  if(z.key==='ps'){
+    cy += mm(2);
+    ctx.font='bold '+mm(3.4)+'px Arial';
+    var slaW = ctx.measureText(z.sla).width + mm(10);
+    ctx.fillStyle=z.cor;
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px+mm(8),cy-mm(4.5),slaW,mm(8),mm(4)) : ctx.rect(px+mm(8),cy-mm(4.5),slaW,mm(8));
+    ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText(z.sla, px+mm(13), cy+mm(1));
+  }
 
   // QR no canto inferior direito
   var qrSize = mm(26);
